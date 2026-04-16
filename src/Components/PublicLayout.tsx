@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 const NAV_LINKS = [
   { path: '/', key: 'home' },
+  { path: '/about', key: 'about' },
   { path: '/eventi', key: 'eventi' },
   { path: '/gallery', key: 'gallery' },
   { path: '/discografia', key: 'discografia' },

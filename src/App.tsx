@@ -14,6 +14,7 @@ import { LOCAL_STORAGE_KEYS, resolveRole, USER_ROLES, DEFAULT_ADMIN_ROUTE } from
 
 // Pagine pubbliche
 import Home from './Pages/Home/Home';
+import AboutPage from './Pages/About/About';
 import EventiPage from './Pages/Eventi/Eventi';
 
 import GalleryPage from './Pages/Gallery/Gallery';
@@ -32,6 +33,8 @@ import PhotoAlbums from './Pages/Backoffice/PhotoAlbums/PhotoAlbums';
 import PhotoAlbumDetail from './Pages/Backoffice/PhotoAlbums/PhotoAlbumDetail';
 import MusicAlbums from './Pages/Backoffice/MusicAlbums/MusicAlbums';
 import MusicAlbumDetail from './Pages/Backoffice/MusicAlbums/MusicAlbumDetail';
+import ContentBlocks from './Pages/Backoffice/ContentBlocks/ContentBlocks';
+import ContentBlockDetail from './Pages/Backoffice/ContentBlocks/ContentBlockDetail';
 import AdminLayout from './Components/AdminLayout';
 
 // ---------------------------------------------------------------------------
@@ -123,6 +126,7 @@ const AppContent: React.FC = () => {
       <Routes>
         {/* Pubbliche */}
         <Route path="/" element={<Home />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/eventi" element={<EventiPage />} />
 
         <Route path="/gallery" element={<GalleryPage />} />
@@ -153,6 +157,9 @@ const AppContent: React.FC = () => {
 
         <Route path="/admin/discografia" element={<ProtectedRoute {...protectedProps}><MusicAlbums /></ProtectedRoute>} />
         <Route path="/admin/discografia/:id" element={<ProtectedRoute {...protectedProps}><MusicAlbumDetail /></ProtectedRoute>} />
+
+        <Route path="/admin/contenuti" element={<ProtectedRoute {...protectedProps}><ContentBlocks /></ProtectedRoute>} />
+        <Route path="/admin/contenuti/:id" element={<ProtectedRoute {...protectedProps}><ContentBlockDetail /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

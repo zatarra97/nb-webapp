@@ -1,10 +1,15 @@
 {
   "nav": {
     "home": "Home",
+    "about": "About",
     "eventi": "Eventi",
     "press": "Press",
     "gallery": "Gallery",
     "discografia": "Discografia"
+  },
+  "about": {
+    "title": "About",
+    "empty": "Contenuto non ancora disponibile."
   },
   "home": {
     "hero_subtitle": "Cantante",

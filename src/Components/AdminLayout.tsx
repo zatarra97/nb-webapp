@@ -7,6 +7,7 @@ interface AdminLayoutProps {
 }
 
 const navItems = [
+  { path: '/admin/contenuti', label: 'Contenuti', icon: 'fa-align-left' },
   { path: '/admin/eventi', label: 'Eventi', icon: 'fa-calendar' },
   { path: '/admin/press', label: 'Press', icon: 'fa-newspaper' },
   { path: '/admin/gallery', label: 'Gallery', icon: 'fa-images' },
