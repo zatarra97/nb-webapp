@@ -143,7 +143,7 @@ const MusicAlbumDetail = () => {
           {form.fotoS3Path && (
             <img src={form.fotoS3Path} alt="Copertina" className="w-40 h-40 object-cover rounded-lg mb-2" />
           )}
-          <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp"
+          <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/avif"
             disabled={uploadingField === 'foto'}
             onChange={(e) => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }}
             className="block text-sm text-gray-700 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"

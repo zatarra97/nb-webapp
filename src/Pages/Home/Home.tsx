@@ -12,12 +12,13 @@ const Home = () => {
   const [press, setPress] = useState<any[]>([]);
   const [albums, setAlbums] = useState<any[]>([]);
   const [musicAlbums, setMusicAlbums] = useState<any[]>([]);
+  const [showAllMusic, setShowAllMusic] = useState(false);
 
   useEffect(() => {
     getPublicList('events').then((d) => setEventi(d.slice(0, 3))).catch(() => {});
     getPublicList('press').then(setPress).catch(() => {});
     getPublicList('photo-albums').then((d) => setAlbums(d.slice(0, 4))).catch(() => {});
-    getPublicList('music-albums').then((d) => setMusicAlbums(d.slice(0, 3))).catch(() => {});
+    getPublicList('music-albums').then(setMusicAlbums).catch(() => {});
   }, []);
 
   return (
@@ -27,6 +28,58 @@ const Home = () => {
         <h1 className="text-6xl font-bold tracking-tight mb-3">NB</h1>
         <p className="text-lg text-gray-500 tracking-widest uppercase">{t('home.hero_subtitle')}</p>
       </section>
+
+      {/* Discografia */}
+      {musicAlbums.length > 0 && (
+        <section className="py-20 border-b border-gray-100 bg-gray-950 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.04)_0%,_transparent_60%)] pointer-events-none" />
+          <div className="container mx-auto px-6 relative">
+            <div className="mb-10">
+              <p className="text-xs font-semibold tracking-widest uppercase text-gray-500 mb-2">{t('home.section_discografia')}</p>
+              <h2 className="text-3xl font-bold text-white">{t('discografia.subtitle')}</h2>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {(showAllMusic ? musicAlbums : musicAlbums.slice(0, 3)).map((album) => (
+                <div key={album.publicId} className="group flex gap-5 items-center bg-white/5 hover:bg-white/8 border border-white/8 hover:border-white/20 rounded-2xl p-5 transition-all duration-200">
+                  {album.fotoS3Path ? (
+                    <img src={album.fotoS3Path} alt={album.titolo} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 shadow-lg" />
+                  ) : (
+                    <div className="w-20 h-20 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                      <i className="fa-solid fa-music text-white/30 text-2xl" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-white truncate">{album.titolo}</p>
+                    {album.streamingLinks && Object.keys(album.streamingLinks).length > 0 && (
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        {Object.keys(album.streamingLinks).slice(0, 4).map((platform) => (
+                          <a key={platform} href={album.streamingLinks[platform]} target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-gray-400 hover:text-white border border-white/10 hover:border-white/30 rounded-md px-2 py-0.5 transition-colors capitalize">
+                            {platform}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              {!showAllMusic && musicAlbums.length > 3 && (
+                <button
+                  onClick={() => setShowAllMusic(true)}
+                  className="text-sm text-gray-400 hover:text-white border border-white/10 hover:border-white/30 rounded-xl px-5 py-2.5 transition-all cursor-pointer"
+                >
+                  {t('home.view_all')} ({musicAlbums.length - 3} {t('home.section_discografia').toLowerCase()})
+                </button>
+              )}
+              <Link to="/discografia" className="text-sm font-semibold text-white flex items-center gap-2 hover:gap-3 transition-all">
+                {t('discografia.title')} <i className="fa-solid fa-arrow-right text-xs" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Prossimi eventi */}
       {eventi.length > 0 && (
@@ -132,33 +185,6 @@ const Home = () => {
         </section>
       )}
 
-      {/* Discografia */}
-      {musicAlbums.length > 0 && (
-        <section className="py-16">
-          <div className="container mx-auto px-6">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold">{t('home.section_discografia')}</h2>
-              <Link to="/discografia" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-                {t('home.view_all')} →
-              </Link>
-            </div>
-            <div className="grid md:grid-cols-3 gap-6">
-              {musicAlbums.map((album) => (
-                <div key={album.publicId} className="flex gap-4 items-center border border-gray-100 rounded-2xl p-4">
-                  {album.fotoS3Path ? (
-                    <img src={album.fotoS3Path} alt={album.titolo} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
-                  ) : (
-                    <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-music text-gray-300" />
-                    </div>
-                  )}
-                  <p className="font-semibold text-gray-900">{album.titolo}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
     </PublicLayout>
   );
 };

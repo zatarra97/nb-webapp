@@ -244,7 +244,7 @@ const PhotoAlbumDetail = () => {
                 )}
                 <input
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/avif"
                   disabled={uploadingIdx !== null}
                   onChange={async (e) => {
                     if (!e.target.files?.[0] || !albumId) return;
