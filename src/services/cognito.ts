@@ -12,13 +12,28 @@ const poolData = {
 
 export const userPool = new CognitoUserPool(poolData);
 
+export interface SignInResult {
+  cognitoUser: CognitoUser;
+  challenge?: 'NEW_PASSWORD_REQUIRED';
+}
+
 class CognitoService {
-  async signIn(email: string, password: string): Promise<CognitoUser> {
+  async signIn(email: string, password: string): Promise<SignInResult> {
     const authDetails = new AuthenticationDetails({ Username: email, Password: password });
     const cognitoUser = new CognitoUser({ Username: email, Pool: userPool });
     return new Promise((resolve, reject) => {
       cognitoUser.authenticateUser(authDetails, {
-        onSuccess: () => resolve(cognitoUser),
+        onSuccess: () => resolve({ cognitoUser }),
+        onFailure: reject,
+        newPasswordRequired: () => resolve({ cognitoUser, challenge: 'NEW_PASSWORD_REQUIRED' }),
+      });
+    });
+  }
+
+  async completeNewPassword(cognitoUser: CognitoUser, newPassword: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      cognitoUser.completeNewPasswordChallenge(newPassword, {}, {
+        onSuccess: () => resolve(),
         onFailure: reject,
       });
     });
