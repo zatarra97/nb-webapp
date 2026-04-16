@@ -90,7 +90,6 @@ const ContentBlockDetail = () => {
   const [titoloEN, setTitoloEN] = useState('');
   const [contenutoIT, setContenutoIT] = useState('');
   const [contenutoEN, setContenutoEN] = useState('');
-  const [ordine, setOrdine] = useState(0);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'it' | 'en'>('it');
@@ -104,7 +103,6 @@ const ContentBlockDetail = () => {
         setTitoloEN(data.titoloEN || '');
         setContenutoIT(data.contenutoIT || '');
         setContenutoEN(data.contenutoEN || '');
-        setOrdine(data.ordine ?? 0);
       })
       .catch(() => toast.error('Errore nel caricamento'))
       .finally(() => setLoading(false));
@@ -114,7 +112,7 @@ const ContentBlockDetail = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = { sezione, titoloIT: titoloIT || null, titoloEN: titoloEN || null, contenutoIT: contenutoIT || null, contenutoEN: contenutoEN || null, ordine };
+      const payload = { sezione, titoloIT: titoloIT || null, titoloEN: titoloEN || null, contenutoIT: contenutoIT || null, contenutoEN: contenutoEN || null };
       if (isNew) {
         await adminCreate('content-blocks', payload);
       } else {
@@ -145,21 +143,18 @@ const ContentBlockDetail = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
-        {/* Sezione + ordine */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">Sezione *</label>
-            <select
-              value={sezione}
-              onChange={(e) => setSezione(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              {SEZIONI.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-          <Input label="Ordine" type="number" value={String(ordine)} onChange={(e) => setOrdine(Number(e.target.value) || 0)} />
+        {/* Sezione */}
+        <div>
+          <label className="block text-gray-700 text-sm font-bold mb-2">Sezione *</label>
+          <select
+            value={sezione}
+            onChange={(e) => setSezione(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {SEZIONI.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
 
         {/* Tab IT / EN */}

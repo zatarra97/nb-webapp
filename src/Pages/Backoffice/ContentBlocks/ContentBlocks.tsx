@@ -77,7 +77,6 @@ const ContentBlocks = () => {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-3 mb-1">
                 <span className="text-xs font-semibold text-blue-600 bg-blue-50 rounded-md px-2 py-0.5 capitalize">{block.sezione}</span>
-                <span className="text-xs text-gray-400">ordine: {block.ordine}</span>
               </div>
               <p className="font-medium text-gray-900 truncate">
                 {block.titoloIT || block.titoloEN || <span className="text-gray-400 italic">senza titolo</span>}
