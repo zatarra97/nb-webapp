@@ -4,6 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { getPublicList } from '../../services/api-utility';
 import PublicLayout from '../../Components/PublicLayout';
 
+const MONTHS_IT = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const DAYS_IT = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+const DAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
 const Home = () => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language === 'en' ? 'EN' : 'IT';
@@ -13,13 +18,56 @@ const Home = () => {
   const [albums, setAlbums] = useState<any[]>([]);
   const [musicAlbums, setMusicAlbums] = useState<any[]>([]);
   const [showAllMusic, setShowAllMusic] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+
+  const today = new Date();
+  const [calYear, setCalYear] = useState(today.getFullYear());
+  const [calMonth, setCalMonth] = useState(today.getMonth());
 
   useEffect(() => {
-    getPublicList('events').then((d) => setEventi(d.slice(0, 3))).catch(() => {});
+    getPublicList('events').then(setEventi).catch(() => {});
     getPublicList('press').then(setPress).catch(() => {});
     getPublicList('photo-albums').then((d) => setAlbums(d.slice(0, 4))).catch(() => {});
     getPublicList('music-albums').then(setMusicAlbums).catch(() => {});
   }, []);
+
+  const prevMonth = () => {
+    if (calMonth === 0) { setCalYear((y) => y - 1); setCalMonth(11); }
+    else setCalMonth((m) => m - 1);
+  };
+  const nextMonth = () => {
+    if (calMonth === 11) { setCalYear((y) => y + 1); setCalMonth(0); }
+    else setCalMonth((m) => m + 1);
+  };
+
+  // Map dateStr (YYYY-MM-DD) → list of {event, date}
+  const eventsByDate = eventi.reduce<Record<string, { ev: any; date: any }[]>>((acc, ev) => {
+    ev.dates?.forEach((d: any) => {
+      if (!acc[d.data]) acc[d.data] = [];
+      acc[d.data].push({ ev, date: d });
+    });
+    return acc;
+  }, {});
+
+  // Calendar grid
+  const firstDow = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+  const startOffset = firstDow === 0 ? 6 : firstDow - 1; // Mon=0
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+  const cells = Array.from({ length: totalCells }, (_, i) => {
+    const day = i - startOffset + 1;
+    return day >= 1 && day <= daysInMonth ? day : null;
+  });
+
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const monthNames = lang === 'EN' ? MONTHS_EN : MONTHS_IT;
+  const dayNames = lang === 'EN' ? DAYS_EN : DAYS_IT;
+
+  const description = selectedEvent
+    ? (lang === 'EN'
+      ? selectedEvent.descrizioneEN || selectedEvent.descrizioneIT
+      : selectedEvent.descrizioneIT || selectedEvent.descrizioneEN)
+    : null;
 
   return (
     <PublicLayout>
@@ -75,32 +123,72 @@ const Home = () => {
         </section>
       )}
 
-      {/* Prossimi eventi */}
+      {/* Calendario eventi */}
       {eventi.length > 0 && (
         <section className="py-16 border-b border-gray-100">
-          <div className="container mx-auto px-6">
+          <div className="container mx-auto px-6 max-w-5xl">
+            {/* Header mese */}
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold">{t('home.section_eventi')}</h2>
-              <Link to="/eventi" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-                {t('home.view_all')} →
-              </Link>
+              <button onClick={prevMonth} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+                <i className="fa-solid fa-chevron-left text-gray-500 text-sm" />
+              </button>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {monthNames[calMonth]} {calYear}
+              </h2>
+              <button onClick={nextMonth} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+                <i className="fa-solid fa-chevron-right text-gray-500 text-sm" />
+              </button>
             </div>
-            <div className="grid md:grid-cols-3 gap-6">
-              {eventi.map((ev) => {
-                const nextDate = ev.dates?.sort((a: any, b: any) =>
-                  new Date(a.data).getTime() - new Date(b.data).getTime()
-                )[0];
+
+            {/* Intestazione giorni settimana */}
+            <div className="grid grid-cols-7 mb-1">
+              {dayNames.map((d) => (
+                <div key={d} className="text-center text-xs font-semibold text-gray-400 uppercase py-2 tracking-wide">
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            {/* Griglia giorni */}
+            <div className="grid grid-cols-7 border-l border-t border-gray-100 rounded-xl overflow-hidden">
+              {cells.map((day, i) => {
+                const dateStr = day
+                  ? `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                  : null;
+                const dayEntries = dateStr ? (eventsByDate[dateStr] ?? []) : [];
+                const isToday = dateStr === todayStr;
                 return (
-                  <div key={ev.publicId} className="border border-gray-100 rounded-2xl overflow-hidden">
-                    {ev.immagineS3Path && (
-                      <img src={ev.immagineS3Path} alt={ev.titolo} className="w-full h-44 object-cover" />
+                  <div
+                    key={i}
+                    className={`min-h-[110px] border-r border-b border-gray-100 p-1.5 ${!day ? 'bg-gray-50/60' : ''}`}
+                  >
+                    {day && (
+                      <>
+                        <span className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1 ${
+                          isToday ? 'bg-gray-900 text-white' : 'text-gray-400'
+                        }`}>
+                          {day}
+                        </span>
+                        <div className="space-y-0.5">
+                          {dayEntries.map(({ ev, date }, j) => (
+                            <button
+                              key={j}
+                              onClick={() => setSelectedEvent(ev)}
+                              className="w-full text-left rounded-md px-1.5 py-1 bg-gray-900 hover:bg-gray-700 transition-colors cursor-pointer group"
+                            >
+                              {date.ora && (
+                                <span className="text-[10px] text-gray-400 group-hover:text-gray-300 block leading-none mb-0.5">
+                                  {date.ora.slice(0, 5)}
+                                </span>
+                              )}
+                              <span className="text-[11px] text-white font-medium block truncate leading-tight">
+                                {ev.titolo}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </>
                     )}
-                    <div className="p-4">
-                      <p className="text-xs text-gray-400 mb-1">
-                        {nextDate ? new Date(nextDate.data).toLocaleDateString(i18n.language) : ''}
-                      </p>
-                      <h3 className="font-semibold text-gray-900">{ev.titolo}</h3>
-                    </div>
                   </div>
                 );
               })}
@@ -112,11 +200,9 @@ const Home = () => {
       {/* Press */}
       {press.length > 0 && (
         <section className="py-20 border-b border-gray-100 overflow-hidden relative">
-          {/* Sfondo decorativo */}
           <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800" />
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-
           <div className="relative container mx-auto px-6">
             <div className="mb-10">
               <p className="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">{t('home.section_press')}</p>
@@ -179,6 +265,73 @@ const Home = () => {
         </section>
       )}
 
+      {/* Modale evento */}
+      {selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedEvent(null)}>
+          <div className="absolute inset-0 bg-black/50" />
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Pulsante chiudi */}
+            <button
+              onClick={() => setSelectedEvent(null)}
+              className="absolute top-3 right-3 z-10 w-8 h-8 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <i className="fa-solid fa-times text-white text-sm" />
+            </button>
+
+            {selectedEvent.immagineS3Path && (
+              <img
+                src={selectedEvent.immagineS3Path}
+                alt={selectedEvent.titolo}
+                className="w-full h-52 object-cover rounded-t-2xl"
+              />
+            )}
+
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">{selectedEvent.titolo}</h3>
+
+              {/* Date */}
+              {selectedEvent.dates?.length > 0 && (
+                <div className="mb-4 space-y-1.5">
+                  {[...selectedEvent.dates]
+                    .sort((a: any, b: any) => new Date(a.data).getTime() - new Date(b.data).getTime())
+                    .map((d: any, i: number) => (
+                      <p key={i} className="text-sm text-gray-600 flex items-center gap-2">
+                        <i className="fa-regular fa-calendar text-gray-400 w-4" />
+                        <span>
+                          {new Date(d.data + 'T00:00:00').toLocaleDateString(i18n.language, {
+                            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+                          })}
+                          {d.ora && <span className="ml-2 text-gray-500 font-medium">{d.ora.slice(0, 5)}</span>}
+                        </span>
+                      </p>
+                    ))}
+                </div>
+              )}
+
+              {/* Descrizione */}
+              {description && (
+                <p className="text-sm text-gray-700 leading-relaxed mb-5 whitespace-pre-line">{description}</p>
+              )}
+
+              {/* Link biglietti */}
+              {selectedEvent.linkBiglietti && (
+                <a
+                  href={selectedEvent.linkBiglietti}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 transition-colors"
+                >
+                  <i className="fa-solid fa-ticket text-xs" />
+                  {t('eventi.tickets')}
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </PublicLayout>
   );
 };
