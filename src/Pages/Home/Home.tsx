@@ -29,32 +29,29 @@ const Home = () => {
         <p className="text-lg text-gray-500 tracking-widest uppercase">{t('home.hero_subtitle')}</p>
       </section>
 
-      {/* Discografia */}
+      {/* Album musicali */}
       {musicAlbums.length > 0 && (
         <section className="py-20 border-b border-gray-100 bg-gray-950 relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.04)_0%,_transparent_60%)] pointer-events-none" />
-          <div className="container mx-auto px-6 relative">
-            <div className="mb-10">
-              <p className="text-xs font-semibold tracking-widest uppercase text-gray-500 mb-2">{t('home.section_discografia')}</p>
-              <h2 className="text-3xl font-bold text-white">{t('discografia.subtitle')}</h2>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="container mx-auto px-6 relative max-w-3xl">
+            <h2 className="text-3xl font-bold text-white text-center mb-10">Album</h2>
+            <div className="space-y-4">
               {(showAllMusic ? musicAlbums : musicAlbums.slice(0, 3)).map((album) => (
-                <div key={album.publicId} className="group flex gap-5 items-center bg-white/5 hover:bg-white/8 border border-white/8 hover:border-white/20 rounded-2xl p-5 transition-all duration-200">
+                <div key={album.publicId} className="group flex gap-6 items-center bg-white/5 hover:bg-white/8 border border-white/8 hover:border-white/20 rounded-2xl p-5 transition-all duration-200">
                   {album.fotoS3Path ? (
-                    <img src={album.fotoS3Path} alt={album.titolo} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 shadow-lg" />
+                    <img src={album.fotoS3Path} alt={album.titolo} className="w-24 h-24 rounded-xl object-cover flex-shrink-0 shadow-lg" />
                   ) : (
-                    <div className="w-20 h-20 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-24 h-24 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
                       <i className="fa-solid fa-music text-white/30 text-2xl" />
                     </div>
                   )}
-                  <div className="min-w-0">
-                    <p className="font-semibold text-white truncate">{album.titolo}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-lg font-semibold text-white mb-3">{album.titolo}</p>
                     {album.streamingLinks && Object.keys(album.streamingLinks).length > 0 && (
-                      <div className="flex gap-2 mt-2 flex-wrap">
-                        {Object.keys(album.streamingLinks).slice(0, 4).map((platform) => (
-                          <a key={platform} href={album.streamingLinks[platform]} target="_blank" rel="noopener noreferrer"
-                            className="text-xs text-gray-400 hover:text-white border border-white/10 hover:border-white/30 rounded-md px-2 py-0.5 transition-colors capitalize">
+                      <div className="flex gap-2 flex-wrap">
+                        {Object.entries(album.streamingLinks).map(([platform, url]) => (
+                          <a key={platform} href={url as string} target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 rounded-lg px-3 py-1.5 transition-all capitalize">
                             {platform}
                           </a>
                         ))}
@@ -64,19 +61,16 @@ const Home = () => {
                 </div>
               ))}
             </div>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              {!showAllMusic && musicAlbums.length > 3 && (
+            {!showAllMusic && musicAlbums.length > 3 && (
+              <div className="mt-6 text-center">
                 <button
                   onClick={() => setShowAllMusic(true)}
-                  className="text-sm text-gray-400 hover:text-white border border-white/10 hover:border-white/30 rounded-xl px-5 py-2.5 transition-all cursor-pointer"
+                  className="text-sm text-gray-400 hover:text-white border border-white/10 hover:border-white/20 rounded-xl px-6 py-2.5 transition-all cursor-pointer"
                 >
-                  {t('home.view_all')} ({musicAlbums.length - 3} {t('home.section_discografia').toLowerCase()})
+                  Mostra altri {musicAlbums.length - 3}
                 </button>
-              )}
-              <Link to="/discografia" className="text-sm font-semibold text-white flex items-center gap-2 hover:gap-3 transition-all">
-                {t('discografia.title')} <i className="fa-solid fa-arrow-right text-xs" />
-              </Link>
-            </div>
+              </div>
+            )}
           </div>
         </section>
       )}
