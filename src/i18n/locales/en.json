@@ -1,0 +1,134 @@
+{
+  "nav": {
+    "home": "Home",
+    "eventi": "Events",
+    "press": "Press",
+    "gallery": "Gallery",
+    "discografia": "Discography"
+  },
+  "home": {
+    "hero_subtitle": "Singer",
+    "section_eventi": "Upcoming events",
+    "section_press": "Press coverage",
+    "section_gallery": "Gallery",
+    "section_discografia": "Discography",
+    "view_all": "View all"
+  },
+  "eventi": {
+    "title": "Events",
+    "subtitle": "Dates and concerts",
+    "tickets": "Buy tickets",
+    "empty": "No events available at the moment."
+  },
+  "press": {
+    "title": "Press",
+    "subtitle": "What they say about us",
+    "empty": "No articles available at the moment."
+  },
+  "gallery": {
+    "title": "Gallery",
+    "subtitle": "Photos and images",
+    "back": "Back to albums",
+    "empty": "No albums available at the moment.",
+    "empty_images": "No images in this album."
+  },
+  "discografia": {
+    "title": "Discography",
+    "subtitle": "Albums and singles",
+    "listen_on": "Listen on",
+    "preview": "Preview",
+    "empty": "No albums available at the moment.",
+    "streaming": {
+      "spotify": "Spotify",
+      "apple": "Apple Music",
+      "youtube": "YouTube",
+      "amazon": "Amazon Music",
+      "deezer": "Deezer",
+      "tidal": "Tidal"
+    }
+  },
+  "admin": {
+    "title": "Backoffice",
+    "subtitle": "Content management",
+    "logout": "Logout",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "new": "New",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm_delete": "Are you sure you want to delete this item?",
+    "add": "Add",
+    "upload": "Upload",
+    "uploading": "Uploading...",
+    "remove": "Remove",
+    "no_data": "No data",
+    "loading": "Loading...",
+    "saved": "Saved successfully",
+    "deleted": "Deleted successfully",
+    "error": "An error occurred",
+    "nav": {
+      "eventi": "Events",
+      "press": "Press",
+      "gallery": "Gallery",
+      "discografia": "Discography"
+    },
+    "eventi": {
+      "title": "Manage events",
+      "new": "New event",
+      "titolo": "Title *",
+      "immagine": "Image",
+      "descrizioneIT": "Description (IT)",
+      "descrizioneEN": "Description (EN)",
+      "linkBiglietti": "Ticket link",
+      "dates": "Dates",
+      "date": "Date *",
+      "ora": "Time",
+      "add_date": "Add date",
+      "remove_date": "Remove date"
+    },
+    "press": {
+      "title": "Manage press",
+      "new": "New article",
+      "nomeTestata": "Publication name *",
+      "citazioneIT": "Quote (IT)",
+      "citazioneEN": "Quote (EN)",
+      "nomeGiornalista": "Journalist name",
+      "ordine": "Display order"
+    },
+    "gallery": {
+      "title": "Manage gallery",
+      "new_album": "New album",
+      "nome": "Album name *",
+      "ordine": "Order",
+      "images": "Images",
+      "image_ordine": "Order *",
+      "image_titolo": "Title",
+      "image_ruoloIT": "Role (IT)",
+      "image_ruoloEN": "Role (EN)",
+      "image_conIT": "With (IT)",
+      "image_conEN": "With (EN)",
+      "image_descrizioneIT": "Description (IT)",
+      "image_descrizioneEN": "Description (EN)",
+      "add_image": "Add image",
+      "back": "Back to albums"
+    },
+    "discografia": {
+      "title": "Manage discography",
+      "new": "New album",
+      "titolo": "Title *",
+      "ordine": "Order",
+      "copertina": "Cover",
+      "audio_preview": "Audio preview",
+      "streaming_links": "Streaming links",
+      "add_link": "Add link",
+      "platform": "Platform",
+      "url": "URL"
+    }
+  },
+  "common": {
+    "it": "IT",
+    "en": "EN",
+    "required": "Required field"
+  }
+}
