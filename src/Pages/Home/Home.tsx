@@ -64,21 +64,36 @@ const Home = () => {
 
       {/* Press */}
       {press.length > 0 && (
-        <section className="py-16 bg-gray-50 border-b border-gray-100">
-          <div className="container mx-auto px-6">
-            <h2 className="text-2xl font-bold mb-8">{t('home.section_press')}</h2>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {press.map((p) => (
-                <div key={p.publicId} className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col justify-between gap-4">
-                  <p className="text-sm italic text-gray-600 leading-relaxed">
-                    "{lang === 'EN' ? p.citazioneEN || p.citazioneIT : p.citazioneIT || p.citazioneEN}"
-                  </p>
-                  <div>
-                    <p className="text-xs font-bold text-gray-900 uppercase tracking-wide">{p.nomeTestata}</p>
-                    {p.nomeGiornalista && <p className="text-xs text-gray-400 mt-0.5">{p.nomeGiornalista}</p>}
+        <section className="py-20 border-b border-gray-100 overflow-hidden relative">
+          {/* Sfondo decorativo */}
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative container mx-auto px-6">
+            <div className="mb-10">
+              <p className="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">{t('home.section_press')}</p>
+              <h2 className="text-3xl font-bold text-white">{t('press.subtitle')}</h2>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {press.map((p) => {
+                const citazione = lang === 'EN' ? p.citazioneEN || p.citazioneIT : p.citazioneIT || p.citazioneEN;
+                return (
+                  <div key={p.publicId} className="bg-white/8 backdrop-blur border border-white/10 rounded-2xl p-5 flex flex-col gap-3">
+                    <p className="text-xs font-bold text-white uppercase tracking-widest">{p.nomeTestata}</p>
+                    {citazione && (
+                      <p className="text-sm text-gray-300 italic leading-relaxed flex-1">
+                        <span className="text-2xl text-white/30 font-serif leading-none mr-1">"</span>
+                        {citazione}
+                        <span className="text-2xl text-white/30 font-serif leading-none ml-1">"</span>
+                      </p>
+                    )}
+                    {p.nomeGiornalista && (
+                      <p className="text-xs text-gray-500 mt-auto">— {p.nomeGiornalista}</p>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
