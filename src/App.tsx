@@ -15,7 +15,7 @@ import { LOCAL_STORAGE_KEYS, resolveRole, USER_ROLES, DEFAULT_ADMIN_ROUTE } from
 // Pagine pubbliche
 import Home from './Pages/Home/Home';
 import EventiPage from './Pages/Eventi/Eventi';
-import PressPage from './Pages/Press/Press';
+
 import GalleryPage from './Pages/Gallery/Gallery';
 import GalleryAlbumPage from './Pages/Gallery/GalleryAlbum';
 import DiscografiaPage from './Pages/Discografia/Discografia';
@@ -124,7 +124,7 @@ const AppContent: React.FC = () => {
         {/* Pubbliche */}
         <Route path="/" element={<Home />} />
         <Route path="/eventi" element={<EventiPage />} />
-        <Route path="/press" element={<PressPage />} />
+
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/gallery/:albumId" element={<GalleryAlbumPage />} />
         <Route path="/discografia" element={<DiscografiaPage />} />

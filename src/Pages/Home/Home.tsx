@@ -15,7 +15,7 @@ const Home = () => {
 
   useEffect(() => {
     getPublicList('events').then((d) => setEventi(d.slice(0, 3))).catch(() => {});
-    getPublicList('press').then((d) => setPress(d.slice(0, 3))).catch(() => {});
+    getPublicList('press').then(setPress).catch(() => {});
     getPublicList('photo-albums').then((d) => setAlbums(d.slice(0, 4))).catch(() => {});
     getPublicList('music-albums').then((d) => setMusicAlbums(d.slice(0, 3))).catch(() => {});
   }, []);
@@ -66,20 +66,17 @@ const Home = () => {
       {press.length > 0 && (
         <section className="py-16 bg-gray-50 border-b border-gray-100">
           <div className="container mx-auto px-6">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold">{t('home.section_press')}</h2>
-              <Link to="/press" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-                {t('home.view_all')} →
-              </Link>
-            </div>
-            <div className="grid md:grid-cols-3 gap-6">
+            <h2 className="text-2xl font-bold mb-8">{t('home.section_press')}</h2>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
               {press.map((p) => (
-                <div key={p.publicId} className="bg-white rounded-2xl border border-gray-100 p-6">
-                  <p className="text-sm italic text-gray-600 mb-4 line-clamp-4">
+                <div key={p.publicId} className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col justify-between gap-4">
+                  <p className="text-sm italic text-gray-600 leading-relaxed">
                     "{lang === 'EN' ? p.citazioneEN || p.citazioneIT : p.citazioneIT || p.citazioneEN}"
                   </p>
-                  <p className="text-xs font-bold text-gray-900 uppercase tracking-wide">{p.nomeTestata}</p>
-                  {p.nomeGiornalista && <p className="text-xs text-gray-400">{p.nomeGiornalista}</p>}
+                  <div>
+                    <p className="text-xs font-bold text-gray-900 uppercase tracking-wide">{p.nomeTestata}</p>
+                    {p.nomeGiornalista && <p className="text-xs text-gray-400 mt-0.5">{p.nomeGiornalista}</p>}
+                  </div>
                 </div>
               ))}
             </div>

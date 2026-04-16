@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 const NAV_LINKS = [
   { path: '/', key: 'home' },
   { path: '/eventi', key: 'eventi' },
-  { path: '/press', key: 'press' },
   { path: '/gallery', key: 'gallery' },
   { path: '/discografia', key: 'discografia' },
 ];
