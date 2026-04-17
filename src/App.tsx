@@ -15,6 +15,8 @@ import { LOCAL_STORAGE_KEYS, resolveRole, USER_ROLES, DEFAULT_ADMIN_ROUTE } from
 // Pagine pubbliche
 import Home from './Pages/Home/Home';
 import AboutPage from './Pages/About/About';
+import NewsletterConferma from './Pages/Newsletter/Conferma';
+import NewsletterDisiscrizione from './Pages/Newsletter/Disiscrizione';
 import EventiPage from './Pages/Eventi/Eventi';
 
 import GalleryPage from './Pages/Gallery/Gallery';
@@ -127,6 +129,8 @@ const AppContent: React.FC = () => {
         {/* Pubbliche */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/newsletter/conferma" element={<NewsletterConferma />} />
+        <Route path="/newsletter/disiscrizione" element={<NewsletterDisiscrizione />} />
         <Route path="/eventi" element={<EventiPage />} />
 
         <Route path="/gallery" element={<GalleryPage />} />

@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import axios from 'axios';
 import { getPublicList } from '../../services/api-utility';
 import PublicLayout from '../../Components/PublicLayout';
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 const MONTHS_IT = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -19,6 +22,20 @@ const Home = () => {
   const [musicAlbums, setMusicAlbums] = useState<any[]>([]);
   const [showAllMusic, setShowAllMusic] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewsletterStatus('loading');
+    try {
+      await axios.post(`${BACKEND_URL}/subscribe`, { email: newsletterEmail });
+      setNewsletterStatus('ok');
+      setNewsletterEmail('');
+    } catch {
+      setNewsletterStatus('error');
+    }
+  };
 
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
@@ -264,6 +281,45 @@ const Home = () => {
           </div>
         </section>
       )}
+
+      {/* Newsletter */}
+      <section className="py-20 bg-gray-950 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(255,255,255,0.04)_0%,_transparent_60%)] pointer-events-none" />
+        <div className="container mx-auto px-6 max-w-md text-center relative">
+          <p className="text-xs font-semibold tracking-widest uppercase text-gray-500 mb-3">Newsletter</p>
+          <h2 className="text-2xl font-bold text-white mb-2">{t('newsletter.title')}</h2>
+          <p className="text-sm text-gray-400 mb-8">{t('newsletter.subtitle')}</p>
+
+          {newsletterStatus === 'ok' ? (
+            <p className="text-sm text-green-400 flex items-center justify-center gap-2">
+              <i className="fa-solid fa-check" />
+              {t('newsletter.success')}
+            </p>
+          ) : (
+            <form onSubmit={handleSubscribe} className="flex gap-2">
+              <input
+                type="email"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                placeholder={t('newsletter.placeholder')}
+                required
+                disabled={newsletterStatus === 'loading'}
+                className="flex-1 bg-white/8 border border-white/15 hover:border-white/25 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-white/40 transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={newsletterStatus === 'loading'}
+                className="px-5 py-2.5 bg-white text-gray-900 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50 flex-shrink-0"
+              >
+                {newsletterStatus === 'loading' ? '...' : t('newsletter.cta')}
+              </button>
+            </form>
+          )}
+          {newsletterStatus === 'error' && (
+            <p className="text-xs text-red-400 mt-3">{t('newsletter.error')}</p>
+          )}
+        </div>
+      </section>
 
       {/* Modale evento */}
       {selectedEvent && (

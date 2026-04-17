@@ -11,6 +11,20 @@
     "title": "About",
     "empty": "Content not yet available."
   },
+  "newsletter": {
+    "title": "Stay updated",
+    "subtitle": "Get notified when new albums or show dates are announced.",
+    "placeholder": "Your email",
+    "cta": "Subscribe",
+    "success": "Check your email to confirm your subscription.",
+    "error": "Something went wrong. Please try again.",
+    "confirmed_title": "Subscription confirmed!",
+    "confirmed_body": "You are now subscribed. We'll keep you updated.",
+    "unsubscribed_title": "Unsubscribed",
+    "unsubscribed_body": "You won't receive any more emails. You can re-subscribe at any time.",
+    "error_title": "Invalid link",
+    "error_body": "The link has expired or is invalid. Try subscribing again from the homepage."
+  },
   "home": {
     "hero_subtitle": "Singer",
     "section_eventi": "Upcoming events",

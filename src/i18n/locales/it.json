@@ -11,6 +11,20 @@
     "title": "About",
     "empty": "Contenuto non ancora disponibile."
   },
+  "newsletter": {
+    "title": "Resta aggiornato",
+    "subtitle": "Ricevi una notifica quando escono nuovi album o nuove date.",
+    "placeholder": "La tua email",
+    "cta": "Iscriviti",
+    "success": "Controlla la tua email per confermare l'iscrizione.",
+    "error": "Qualcosa è andato storto. Riprova tra qualche istante.",
+    "confirmed_title": "Iscrizione confermata!",
+    "confirmed_body": "Sei iscritto alla newsletter. Riceverai presto i nostri aggiornamenti.",
+    "unsubscribed_title": "Disiscrizione completata",
+    "unsubscribed_body": "Non riceverai più le nostre email. Puoi iscriverti di nuovo in qualsiasi momento.",
+    "error_title": "Link non valido",
+    "error_body": "Il link è scaduto o non è valido. Prova a iscriverti di nuovo dalla homepage."
+  },
   "home": {
     "hero_subtitle": "Cantante",
     "section_eventi": "Prossimi eventi",
