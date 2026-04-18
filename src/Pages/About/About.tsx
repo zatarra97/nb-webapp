@@ -19,7 +19,7 @@ const About = () => {
   return (
     <PublicLayout>
       <section className="py-20">
-        <div className="container mx-auto px-6 max-w-3xl">
+        <div className="container mx-auto px-3 md:px-6 max-w-3xl">
           {loading && (
             <div className="flex justify-center py-20">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400" />

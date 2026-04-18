@@ -5,7 +5,8 @@
     "eventi": "Eventi",
     "press": "Press",
     "gallery": "Gallery",
-    "discografia": "Discografia"
+    "discografia": "Discografia",
+    "contacts": "Contatti"
   },
   "about": {
     "title": "About",
@@ -28,6 +29,8 @@
   "home": {
     "hero_subtitle": "Cantante",
     "section_eventi": "Prossimi eventi",
+    "section_events": "Date",
+    "section_music": "Discografia",
     "section_press": "Rassegna stampa",
     "section_gallery": "Gallery",
     "section_discografia": "Discografia",
@@ -49,7 +52,12 @@
     "subtitle": "Foto e immagini",
     "back": "Torna agli album",
     "empty": "Nessun album disponibile al momento.",
-    "empty_images": "Nessuna immagine in questo album."
+    "empty_images": "Nessuna immagine in questo album.",
+    "download_title": "Foto per la stampa",
+    "download_subtitle": "Immagini ufficiali scaricabili liberamente da giornalisti e media.",
+    "download_button": "Scarica",
+    "downloading": "Scaricamento...",
+    "download_error": "Errore durante il download dell'immagine."
   },
   "discografia": {
     "title": "Discografia",
@@ -145,9 +153,35 @@
       "url": "URL"
     }
   },
+  "contacts": {
+    "title": "Contatti",
+    "general_management": "General Management worldwide",
+    "local_management": "Local Management per Francia, Italia & UK"
+  },
   "common": {
     "it": "IT",
     "en": "EN",
     "required": "Campo obbligatorio"
+  },
+  "footer": {
+    "all_rights_reserved": "Tutti i diritti riservati",
+    "privacy_policy": "Privacy Policy",
+    "cookie_policy": "Cookie Policy",
+    "manage_cookies": "Gestisci cookie"
+  },
+  "cookies": {
+    "banner_title": "Rispettiamo la tua privacy",
+    "banner_body": "Utilizziamo cookie tecnici necessari al funzionamento del sito e, previo tuo consenso, cookie analitici di terze parti (Google Analytics) per capire come viene utilizzato il sito in forma anonima e aggregata. Puoi accettare, rifiutare o personalizzare la tua scelta. Maggiori dettagli nella",
+    "banner_cookie_policy": "Cookie Policy",
+    "banner_privacy_policy": "Privacy Policy",
+    "accept_all": "Accetta tutti",
+    "reject_all": "Rifiuta tutti",
+    "customize": "Personalizza",
+    "save_preferences": "Salva preferenze",
+    "cat_always_active": "sempre attivi",
+    "cat_technical_title": "Cookie tecnici e funzionali",
+    "cat_technical_body": "Necessari al funzionamento del sito (preferenze lingua, gestione del consenso, sessione admin). Non richiedono consenso ai sensi dell'art. 122 del Codice Privacy.",
+    "cat_analytics_title": "Cookie analitici di terze parti",
+    "cat_analytics_body": "Google Analytics 4 con IP anonimizzato. Ci aiutano a capire come viene utilizzato il sito. Attivabili solo con il tuo consenso esplicito."
   }
 }

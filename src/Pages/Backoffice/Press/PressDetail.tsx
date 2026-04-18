@@ -9,7 +9,6 @@ interface FormState {
   citazioneIT: string;
   citazioneEN: string;
   nomeGiornalista: string;
-  ordine: number;
 }
 
 const PressDetail = () => {
@@ -18,7 +17,7 @@ const PressDetail = () => {
   const isNew = id === 'new';
 
   const [form, setForm] = useState<FormState>({
-    nomeTestata: '', citazioneIT: '', citazioneEN: '', nomeGiornalista: '', ordine: 0,
+    nomeTestata: '', citazioneIT: '', citazioneEN: '', nomeGiornalista: '',
   });
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
@@ -31,7 +30,6 @@ const PressDetail = () => {
         citazioneIT: data.citazioneIT || '',
         citazioneEN: data.citazioneEN || '',
         nomeGiornalista: data.nomeGiornalista || '',
-        ordine: data.ordine ?? 0,
       });
     }).catch(() => toast.error('Errore nel caricamento'))
       .finally(() => setLoading(false));
@@ -109,13 +107,6 @@ const PressDetail = () => {
           label="Nome giornalista"
           value={form.nomeGiornalista}
           onChange={(e) => setForm((p) => ({ ...p, nomeGiornalista: e.target.value }))}
-        />
-
-        <Input
-          label="Ordine di visualizzazione"
-          type="number"
-          value={String(form.ordine)}
-          onChange={(e) => setForm((p) => ({ ...p, ordine: Number(e.target.value) || 0 }))}
         />
 
         <div className="flex gap-3 pt-2">

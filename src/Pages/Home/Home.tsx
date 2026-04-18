@@ -12,6 +12,14 @@ const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July
 const DAYS_IT = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 const DAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+const SectionLabel = ({ label }: { label: string }) => (
+  <div className="flex items-center gap-4 mb-10">
+    <div className="flex-1 h-px bg-black" />
+    <span className="text-[11px] font-bold tracking-[0.25em] uppercase">{label}</span>
+    <div className="flex-1 h-px bg-black" />
+  </div>
+);
+
 const Home = () => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language === 'en' ? 'EN' : 'IT';
@@ -57,7 +65,6 @@ const Home = () => {
     else setCalMonth((m) => m + 1);
   };
 
-  // Map dateStr (YYYY-MM-DD) → list of {event, date}
   const eventsByDate = eventi.reduce<Record<string, { ev: any; date: any }[]>>((acc, ev) => {
     ev.dates?.forEach((d: any) => {
       if (!acc[d.data]) acc[d.data] = [];
@@ -66,9 +73,8 @@ const Home = () => {
     return acc;
   }, {});
 
-  // Calendar grid
-  const firstDow = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
-  const startOffset = firstDow === 0 ? 6 : firstDow - 1; // Mon=0
+  const firstDow = new Date(calYear, calMonth, 1).getDay();
+  const startOffset = firstDow === 0 ? 6 : firstDow - 1;
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
   const cells = Array.from({ length: totalCells }, (_, i) => {
@@ -80,6 +86,15 @@ const Home = () => {
   const monthNames = lang === 'EN' ? MONTHS_EN : MONTHS_IT;
   const dayNames = lang === 'EN' ? DAYS_EN : DAYS_IT;
 
+  // Lista piatta eventi del mese selezionato (per vista mobile)
+  const monthEvents = eventi
+    .flatMap((ev) => (ev.dates || []).map((d: any) => ({ ev, date: d })))
+    .filter(({ date }) => {
+      const [y, m] = date.data.split('-').map(Number);
+      return y === calYear && m === calMonth + 1;
+    })
+    .sort((a, b) => a.date.data.localeCompare(b.date.data) || (a.date.ora || '').localeCompare(b.date.ora || ''));
+
   const description = selectedEvent
     ? (lang === 'EN'
       ? selectedEvent.descrizioneEN || selectedEvent.descrizioneIT
@@ -88,35 +103,39 @@ const Home = () => {
 
   return (
     <PublicLayout>
-      {/* Hero */}
-      <section className="py-32 text-center border-b border-gray-100">
-        <h1 className="text-6xl font-bold tracking-tight mb-3">NB</h1>
-        <p className="text-lg text-gray-500 tracking-widest uppercase">{t('home.hero_subtitle')}</p>
+
+      {/* ── HERO ─────────────────────────────────────────────────────────── */}
+      <section className="border-b-2 border-black">
+        <div className="py-16 text-center px-3 md:px-6">
+          <h1 className="text-[100px] leading-none font-black tracking-tight">NB</h1>
+        </div>
       </section>
 
-      {/* Album musicali */}
+      {/* ── ALBUM MUSICALI ───────────────────────────────────────────────── */}
       {musicAlbums.length > 0 && (
-        <section className="py-20 border-b border-gray-100 bg-gray-950 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.04)_0%,_transparent_60%)] pointer-events-none" />
-          <div className="container mx-auto px-6 relative max-w-3xl">
-            <h2 className="text-3xl font-bold text-white text-center mb-10">Album</h2>
-            <div className="space-y-4">
-              {(showAllMusic ? musicAlbums : musicAlbums.slice(0, 3)).map((album) => (
-                <div key={album.publicId} className="group flex gap-6 items-center bg-white/5 hover:bg-white/8 border border-white/8 hover:border-white/20 rounded-2xl p-5 transition-all duration-200">
+        <section className="py-16 border-b-2 border-black">
+          <div className="container mx-auto px-3 md:px-6">
+            <SectionLabel label={t('home.section_music') || 'Discografia'} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-px border border-black bg-black">
+              {(showAllMusic ? musicAlbums : musicAlbums.slice(0, 4)).map((album) => (
+                <div
+                  key={album.publicId}
+                  className="flex gap-5 items-center p-5 bg-white hover:bg-gray-50 transition-colors"
+                >
                   {album.fotoS3Path ? (
-                    <img src={album.fotoS3Path} alt={album.titolo} className="w-24 h-24 rounded-xl object-cover flex-shrink-0 shadow-lg" />
+                    <img src={album.fotoS3Path} alt={album.titolo} className="w-28 h-28 md:w-36 md:h-36 object-cover flex-shrink-0 border border-black" />
                   ) : (
-                    <div className="w-24 h-24 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-music text-white/30 text-2xl" />
+                    <div className="w-28 h-28 md:w-36 md:h-36 border border-black flex items-center justify-center flex-shrink-0 bg-gray-100">
+                      <i className="fa-solid fa-music text-gray-400 text-2xl" />
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-lg font-semibold text-white mb-3">{album.titolo}</p>
+                    <p className="text-base font-bold mb-3 tracking-tight">{album.titolo}</p>
                     {album.streamingLinks && Object.keys(album.streamingLinks).length > 0 && (
-                      <div className="flex gap-2 flex-wrap">
+                      <div className="flex gap-3 flex-wrap">
                         {Object.entries(album.streamingLinks).map(([platform, url]) => (
                           <a key={platform} href={url as string} target="_blank" rel="noopener noreferrer"
-                            className="text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 rounded-lg px-3 py-1.5 transition-all capitalize">
+                            className="text-xs font-medium uppercase tracking-wider underline underline-offset-2 hover:text-gray-500 transition-colors capitalize">
                             {platform}
                           </a>
                         ))}
@@ -126,13 +145,13 @@ const Home = () => {
                 </div>
               ))}
             </div>
-            {!showAllMusic && musicAlbums.length > 3 && (
-              <div className="mt-6 text-center">
+            {!showAllMusic && musicAlbums.length > 4 && (
+              <div className="mt-4 text-center">
                 <button
                   onClick={() => setShowAllMusic(true)}
-                  className="text-sm text-gray-400 hover:text-white border border-white/10 hover:border-white/20 rounded-xl px-6 py-2.5 transition-all cursor-pointer"
+                  className="text-xs font-bold tracking-widest uppercase border border-black px-6 py-2.5 hover:bg-black hover:text-white transition-colors cursor-pointer"
                 >
-                  Mostra altri {musicAlbums.length - 3}
+                  {lang === 'EN' ? `Show ${musicAlbums.length - 4} more` : `Mostra altri ${musicAlbums.length - 4}`}
                 </button>
               </div>
             )}
@@ -140,106 +159,148 @@ const Home = () => {
         </section>
       )}
 
-      {/* Calendario eventi */}
+      {/* ── CALENDARIO / LISTA EVENTI ────────────────────────────────────── */}
       {eventi.length > 0 && (
-        <section className="py-16 border-b border-gray-100">
-          <div className="container mx-auto px-6 max-w-5xl">
-            {/* Header mese */}
-            <div className="flex items-center justify-between mb-8">
-              <button onClick={prevMonth} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                <i className="fa-solid fa-chevron-left text-gray-500 text-sm" />
+        <section className="py-16 border-b-2 border-black">
+          <div className="container mx-auto px-3 md:px-6">
+            <SectionLabel label={t('home.section_events') || 'Date'} />
+
+            {/* Navigazione mese — comune a entrambe le viste */}
+            <div className="flex items-center justify-between mb-6">
+              <button onClick={prevMonth} className="w-8 h-8 border border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors cursor-pointer">
+                <i className="fa-solid fa-chevron-left text-xs" />
               </button>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <span className="text-sm font-bold tracking-widest uppercase">
                 {monthNames[calMonth]} {calYear}
-              </h2>
-              <button onClick={nextMonth} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                <i className="fa-solid fa-chevron-right text-gray-500 text-sm" />
+              </span>
+              <button onClick={nextMonth} className="w-8 h-8 border border-black flex items-center justify-center hover:bg-black hover:text-white transition-colors cursor-pointer">
+                <i className="fa-solid fa-chevron-right text-xs" />
               </button>
             </div>
 
-            {/* Intestazione giorni settimana */}
-            <div className="grid grid-cols-7 mb-1">
-              {dayNames.map((d) => (
-                <div key={d} className="text-center text-xs font-semibold text-gray-400 uppercase py-2 tracking-wide">
-                  {d}
+            {/* ── VISTA MOBILE: lista eventi del mese ── */}
+            <div className="md:hidden">
+              {monthEvents.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-8 border border-black">
+                  {lang === 'EN' ? 'No events this month' : 'Nessun evento in questo mese'}
+                </p>
+              ) : (
+                <div className="border border-black divide-y divide-black">
+                  {monthEvents.map(({ ev, date }, i) => {
+                    const d = new Date(date.data + 'T00:00:00');
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedEvent(ev)}
+                        className="w-full text-left flex items-start gap-4 px-4 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex-shrink-0 w-12 text-center border-r border-black pr-4">
+                          <p className="text-xl font-black leading-none">{d.getDate()}</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            {d.toLocaleDateString(i18n.language, { month: 'short' })}
+                          </p>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold truncate">{ev.titolo}</p>
+                          {ev.luogo && (
+                            <p className="text-xs text-gray-500 mt-0.5 truncate">
+                              <i className="fa-solid fa-location-dot mr-1" />{ev.luogo}
+                            </p>
+                          )}
+                          {date.ora && (
+                            <p className="text-xs text-gray-400 mt-0.5">{date.ora.slice(0, 5)}</p>
+                          )}
+                        </div>
+                        <i className="fa-solid fa-chevron-right text-xs text-gray-300 flex-shrink-0 mt-1" />
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
             </div>
 
-            {/* Griglia giorni */}
-            <div className="grid grid-cols-7 border-l border-t border-gray-100 rounded-xl overflow-hidden">
-              {cells.map((day, i) => {
-                const dateStr = day
-                  ? `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-                  : null;
-                const dayEntries = dateStr ? (eventsByDate[dateStr] ?? []) : [];
-                const isToday = dateStr === todayStr;
-                return (
-                  <div
-                    key={i}
-                    className={`min-h-[110px] border-r border-b border-gray-100 p-1.5 ${!day ? 'bg-gray-50/60' : ''}`}
-                  >
-                    {day && (
-                      <>
-                        <span className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1 ${
-                          isToday ? 'bg-gray-900 text-white' : 'text-gray-400'
-                        }`}>
-                          {day}
-                        </span>
-                        <div className="space-y-0.5">
-                          {dayEntries.map(({ ev, date }, j) => (
-                            <button
-                              key={j}
-                              onClick={() => setSelectedEvent(ev)}
-                              className="w-full text-left rounded-md px-1.5 py-1 bg-gray-900 hover:bg-gray-700 transition-colors cursor-pointer group"
-                            >
-                              {date.ora && (
-                                <span className="text-[10px] text-gray-400 group-hover:text-gray-300 block leading-none mb-0.5">
-                                  {date.ora.slice(0, 5)}
-                                </span>
-                              )}
-                              <span className="text-[11px] text-white font-medium block truncate leading-tight">
-                                {ev.titolo}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
+            {/* ── VISTA DESKTOP: calendario a griglia ── */}
+            <div className="hidden md:block">
+              <div className="grid grid-cols-7 border-t border-l border-black">
+                {dayNames.map((d) => (
+                  <div key={d} className="border-r border-b border-black text-center text-[10px] font-bold tracking-widest uppercase py-2 bg-black text-white">
+                    {d}
                   </div>
-                );
-              })}
+                ))}
+              </div>
+              <div className="grid grid-cols-7 border-l border-black">
+                {cells.map((day, i) => {
+                  const dateStr = day
+                    ? `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                    : null;
+                  const dayEntries = dateStr ? (eventsByDate[dateStr] ?? []) : [];
+                  const isToday = dateStr === todayStr;
+                  return (
+                    <div
+                      key={i}
+                      className={`min-h-[100px] border-r border-b border-black p-1.5 ${!day ? 'bg-gray-50' : 'bg-white'}`}
+                    >
+                      {day && (
+                        <>
+                          <span className={`text-xs font-bold w-6 h-6 flex items-center justify-center mb-1 ${
+                            isToday ? 'bg-black text-white' : 'text-gray-400'
+                          }`}>
+                            {day}
+                          </span>
+                          <div className="space-y-0.5">
+                            {dayEntries.map(({ ev, date }, j) => (
+                              <button
+                                key={j}
+                                onClick={() => setSelectedEvent(ev)}
+                                className="w-full text-left px-1.5 py-1 bg-black text-white hover:bg-gray-800 transition-colors cursor-pointer"
+                              >
+                                {date.ora && (
+                                  <span className="text-[9px] text-gray-400 block leading-none mb-0.5">
+                                    {date.ora.slice(0, 5)}
+                                  </span>
+                                )}
+                                <span className="text-[10px] font-medium block truncate leading-tight">
+                                  {ev.titolo}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+
           </div>
         </section>
       )}
 
-      {/* Press */}
+      {/* ── PRESS ────────────────────────────────────────────────────────── */}
       {press.length > 0 && (
-        <section className="py-20 border-b border-gray-100 overflow-hidden relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800" />
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative container mx-auto px-6">
-            <div className="mb-10">
-              <p className="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">{t('home.section_press')}</p>
-              <h2 className="text-3xl font-bold text-white">{t('press.subtitle')}</h2>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="py-16 border-b-2 border-black">
+          <div className="container mx-auto px-3 md:px-6">
+            <SectionLabel label={t('home.section_press') || 'Press'} />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px border border-black bg-black">
               {press.map((p) => {
                 const citazione = lang === 'EN' ? p.citazioneEN || p.citazioneIT : p.citazioneIT || p.citazioneEN;
                 return (
-                  <div key={p.publicId} className="bg-white/8 backdrop-blur border border-white/10 rounded-2xl p-5 flex flex-col gap-3">
-                    <p className="text-xs font-bold text-white uppercase tracking-widest">{p.nomeTestata}</p>
+                  <div key={p.publicId} className="bg-white p-6 flex flex-col gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest border-b border-black pb-2">
+                      {p.nomeTestata}
+                    </p>
                     {citazione && (
-                      <p className="text-sm text-gray-300 italic leading-relaxed flex-1">
-                        <span className="text-2xl text-white/30 font-serif leading-none mr-1">"</span>
+                      <p className="text-sm leading-relaxed flex-1 italic text-gray-700">
+                        <span className="text-3xl font-black leading-none mr-0.5 not-italic">"</span>
                         {citazione}
-                        <span className="text-2xl text-white/30 font-serif leading-none ml-1">"</span>
+                        <span className="text-3xl font-black leading-none ml-0.5 not-italic">"</span>
                       </p>
                     )}
                     {p.nomeGiornalista && (
-                      <p className="text-xs text-gray-500 mt-auto">— {p.nomeGiornalista}</p>
+                      <p className="text-[11px] uppercase tracking-wider font-medium text-gray-400 mt-auto">
+                        — {p.nomeGiornalista}
+                      </p>
                     )}
                   </div>
                 );
@@ -249,30 +310,32 @@ const Home = () => {
         </section>
       )}
 
-      {/* Gallery */}
+      {/* ── GALLERY ──────────────────────────────────────────────────────── */}
       {albums.length > 0 && (
-        <section className="py-16 border-b border-gray-100">
-          <div className="container mx-auto px-6">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold">{t('home.section_gallery')}</h2>
-              <Link to="/gallery" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+        <section className="py-16 border-b-2 border-black">
+          <div className="container mx-auto px-3 md:px-6">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="flex-1 h-px bg-black" />
+              <span className="text-[11px] font-bold tracking-[0.25em] uppercase">{t('home.section_gallery')}</span>
+              <div className="flex-1 h-px bg-black" />
+              <Link to="/gallery" className="text-[11px] font-bold tracking-[0.25em] uppercase underline underline-offset-2 hover:text-gray-500 transition-colors whitespace-nowrap">
                 {t('home.view_all')} →
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-px border border-black bg-black">
               {albums.map((album) => {
                 const cover = album.immagini?.sort((a: any, b: any) => a.ordine - b.ordine)[0];
                 return (
-                  <Link key={album.publicId} to={`/gallery/${album.publicId}`} className="group relative aspect-square overflow-hidden rounded-xl bg-gray-100">
+                  <Link key={album.publicId} to={`/gallery/${album.publicId}`} className="group relative aspect-square overflow-hidden bg-gray-100">
                     {cover?.s3Path ? (
-                      <img src={cover.s3Path} alt={album.nome} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <img src={cover.s3Path} alt={album.nome} className="w-full h-full object-cover group-hover:opacity-80 transition-opacity duration-300" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
                         <i className="fa-solid fa-image text-3xl text-gray-300" />
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                      <p className="text-white text-sm font-medium">{album.nome}</p>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/80 px-3 py-2 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
+                      <p className="text-white text-xs font-bold uppercase tracking-wider truncate">{album.nome}</p>
                     </div>
                   </Link>
                 );
@@ -282,21 +345,21 @@ const Home = () => {
         </section>
       )}
 
-      {/* Newsletter */}
-      <section className="py-20 bg-gray-950 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(255,255,255,0.04)_0%,_transparent_60%)] pointer-events-none" />
-        <div className="container mx-auto px-6 max-w-md text-center relative">
-          <p className="text-xs font-semibold tracking-widest uppercase text-gray-500 mb-3">Newsletter</p>
-          <h2 className="text-2xl font-bold text-white mb-2">{t('newsletter.title')}</h2>
-          <p className="text-sm text-gray-400 mb-8">{t('newsletter.subtitle')}</p>
-
+      {/* ── NEWSLETTER ───────────────────────────────────────────────────── */}
+      <section className="py-16">
+        <div className="container mx-auto px-3 md:px-6 max-w-lg">
+          <SectionLabel label="Newsletter" />
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-black tracking-tight mb-2">{t('newsletter.title')}</h2>
+            <p className="text-sm text-gray-500">{t('newsletter.subtitle')}</p>
+          </div>
           {newsletterStatus === 'ok' ? (
-            <p className="text-sm text-green-400 flex items-center justify-center gap-2">
+            <p className="text-sm font-medium flex items-center justify-center gap-2 border border-black px-6 py-3">
               <i className="fa-solid fa-check" />
               {t('newsletter.success')}
             </p>
           ) : (
-            <form onSubmit={handleSubscribe} className="flex gap-2">
+            <form onSubmit={handleSubscribe} className="flex gap-0">
               <input
                 type="email"
                 value={newsletterEmail}
@@ -304,81 +367,81 @@ const Home = () => {
                 placeholder={t('newsletter.placeholder')}
                 required
                 disabled={newsletterStatus === 'loading'}
-                className="flex-1 bg-white/8 border border-white/15 hover:border-white/25 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-white/40 transition-colors"
+                className="flex-1 border border-black border-r-0 px-4 py-3 text-sm placeholder-gray-400 focus:outline-none bg-white"
               />
               <button
                 type="submit"
                 disabled={newsletterStatus === 'loading'}
-                className="px-5 py-2.5 bg-white text-gray-900 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50 flex-shrink-0"
+                className="px-6 py-3 bg-black text-white text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors cursor-pointer disabled:opacity-50 flex-shrink-0 border border-black"
               >
                 {newsletterStatus === 'loading' ? '...' : t('newsletter.cta')}
               </button>
             </form>
           )}
           {newsletterStatus === 'error' && (
-            <p className="text-xs text-red-400 mt-3">{t('newsletter.error')}</p>
+            <p className="text-xs text-red-600 mt-3 text-center">{t('newsletter.error')}</p>
           )}
         </div>
       </section>
 
-      {/* Modale evento */}
+      {/* ── MODALE EVENTO ────────────────────────────────────────────────── */}
       {selectedEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedEvent(null)}>
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-black/60" />
           <div
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            className="relative bg-white border-2 border-black w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-[8px_8px_0_0_rgba(0,0,0,1)]"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Pulsante chiudi */}
             <button
               onClick={() => setSelectedEvent(null)}
-              className="absolute top-3 right-3 z-10 w-8 h-8 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center transition-colors cursor-pointer"
+              className="absolute top-3 right-3 z-10 w-8 h-8 border border-black bg-white hover:bg-black hover:text-white flex items-center justify-center transition-colors cursor-pointer"
             >
-              <i className="fa-solid fa-times text-white text-sm" />
+              <i className="fa-solid fa-times text-sm" />
             </button>
 
             {selectedEvent.immagineS3Path && (
-              <img
-                src={selectedEvent.immagineS3Path}
-                alt={selectedEvent.titolo}
-                className="w-full h-52 object-cover rounded-t-2xl"
-              />
+              <img src={selectedEvent.immagineS3Path} alt={selectedEvent.titolo} className="w-full h-52 object-cover border-b-2 border-black" />
             )}
 
             <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">{selectedEvent.titolo}</h3>
+              <p className="text-[10px] font-black tracking-widest uppercase text-gray-400 mb-1">Evento</p>
+              <h3 className="text-xl font-black tracking-tight mb-4 border-b border-black pb-4">{selectedEvent.titolo}</h3>
 
-              {/* Date */}
               {selectedEvent.dates?.length > 0 && (
                 <div className="mb-4 space-y-1.5">
                   {[...selectedEvent.dates]
                     .sort((a: any, b: any) => new Date(a.data).getTime() - new Date(b.data).getTime())
                     .map((d: any, i: number) => (
-                      <p key={i} className="text-sm text-gray-600 flex items-center gap-2">
-                        <i className="fa-regular fa-calendar text-gray-400 w-4" />
+                      <p key={i} className="text-sm flex items-center gap-2">
+                        <i className="fa-regular fa-calendar w-4 text-gray-400" />
                         <span>
                           {new Date(d.data + 'T00:00:00').toLocaleDateString(i18n.language, {
                             weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
                           })}
-                          {d.ora && <span className="ml-2 text-gray-500 font-medium">{d.ora.slice(0, 5)}</span>}
+                          {d.ora && <span className="ml-2 font-bold">{d.ora.slice(0, 5)}</span>}
                         </span>
                       </p>
                     ))}
                 </div>
               )}
 
-              {/* Descrizione */}
-              {description && (
-                <p className="text-sm text-gray-700 leading-relaxed mb-5 whitespace-pre-line">{description}</p>
+              {selectedEvent.luogo && (
+                <p className="text-sm flex items-center gap-2 mb-4">
+                  <i className="fa-solid fa-location-dot w-4 text-gray-400" />
+                  {selectedEvent.luogo}
+                </p>
               )}
 
-              {/* Link biglietti */}
+              {description && (
+                <p className="text-sm leading-relaxed mb-5 whitespace-pre-line text-gray-700 border-t border-gray-200 pt-4">{description}</p>
+              )}
+
               {selectedEvent.linkBiglietti && (
                 <a
                   href={selectedEvent.linkBiglietti}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-700 transition-colors"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors border border-black"
                 >
                   <i className="fa-solid fa-ticket text-xs" />
                   {t('eventi.tickets')}

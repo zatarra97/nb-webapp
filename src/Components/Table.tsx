@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 
@@ -22,11 +22,26 @@ interface TableProps {
   data: any[];
   actions?: Action[];
   loading?: boolean;
+  /**
+   * Se true abilita il drag & drop di riordino. Appare un'icona di drag
+   * come prima voce della colonna "Azioni" e la riga diventa trascinabile.
+   * Al rilascio viene chiamata `onReorder` con il nuovo array nell'ordine
+   * desiderato (stessi oggetti, ordine diverso).
+   */
+  sortable?: boolean;
+  onReorder?: (reorderedItems: any[]) => void | Promise<void>;
 }
 
-const Table = ({ columns, data, actions, loading }: TableProps) => {
+const Table = ({ columns, data, actions, loading, sortable, onReorder }: TableProps) => {
   const getValueByPath = (obj: any, path: string): any =>
     path.split('.').reduce((acc, part) => acc && acc[part], obj);
+
+  // Stato del drag & drop (solo quando sortable)
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+  // Evita che il drag parta da dentro gli input/pulsanti delle azioni: il drag
+  // è consentito solo se il mousedown iniziale è avvenuto sull'handle.
+  const dragArmed = useRef(false);
 
   if (loading) {
     return (
@@ -60,13 +75,51 @@ const Table = ({ columns, data, actions, loading }: TableProps) => {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Drag & drop helpers
+  // ---------------------------------------------------------------------------
+  const handleDragStart = (idx: number) => (e: React.DragEvent<HTMLTableRowElement>) => {
+    if (!sortable || !dragArmed.current) { e.preventDefault(); return; }
+    setDraggedIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    // Firefox richiede setData per far partire il drag
+    e.dataTransfer.setData('text/plain', String(idx));
+  };
+
+  const handleDragOver = (idx: number) => (e: React.DragEvent<HTMLTableRowElement>) => {
+    if (!sortable || draggedIdx === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (overIdx !== idx) setOverIdx(idx);
+  };
+
+  const handleDrop = (idx: number) => (e: React.DragEvent<HTMLTableRowElement>) => {
+    if (!sortable || draggedIdx === null) return;
+    e.preventDefault();
+    if (draggedIdx !== idx) {
+      const next = [...data];
+      const [moved] = next.splice(draggedIdx, 1);
+      next.splice(idx, 0, moved);
+      onReorder?.(next);
+    }
+    setDraggedIdx(null);
+    setOverIdx(null);
+    dragArmed.current = false;
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIdx(null);
+    setOverIdx(null);
+    dragArmed.current = false;
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left text-gray-600">
           <thead className="text-xs text-gray-600 uppercase bg-gray-50">
             <tr>
-              {actions && (
+              {(actions || sortable) && (
                 <th className="px-4 py-4 font-semibold border-r border-gray-200">Azioni</th>
               )}
               {columns.map((c, i) => (
@@ -81,48 +134,74 @@ const Table = ({ columns, data, actions, loading }: TableProps) => {
             </tr>
           </thead>
           <tbody>
-            {data.map((item, idx) => (
-              <tr
-                key={idx}
-                className="border-t border-gray-100 odd:bg-white even:bg-gray-50/50 hover:bg-blue-50/30 transition-colors"
-              >
-                {actions && (
-                  <td className="px-4 py-3 border-r border-gray-200">
-                    <div className="flex gap-2">
-                      {actions.map((action) =>
-                        action.visibility && !action.visibility(item) ? null : (
+            {data.map((item, idx) => {
+              const isDragging = sortable && draggedIdx === idx;
+              const isOver = sortable && overIdx === idx && draggedIdx !== idx;
+              return (
+                <tr
+                  key={item.publicId ?? item.id ?? idx}
+                  draggable={sortable || undefined}
+                  onDragStart={handleDragStart(idx)}
+                  onDragOver={handleDragOver(idx)}
+                  onDrop={handleDrop(idx)}
+                  onDragEnd={handleDragEnd}
+                  onDragLeave={() => { if (sortable && overIdx === idx) setOverIdx(null); }}
+                  className={`border-t border-gray-100 odd:bg-white even:bg-gray-50/50 hover:bg-blue-50/30 transition-colors ${
+                    isDragging ? 'opacity-40' : ''
+                  } ${isOver ? 'outline outline-2 outline-blue-400 outline-offset-[-2px]' : ''}`}
+                >
+                  {(actions || sortable) && (
+                    <td className="px-4 py-3 border-r border-gray-200">
+                      <div className="flex gap-2 items-center">
+                        {sortable && (
                           <button
                             type="button"
-                            key={action.icon}
-                            onClick={() => action.method(item)}
-                            title={action.tooltip}
-                            className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-blue-100 border border-gray-200 hover:border-blue-300 flex items-center justify-center transition-all cursor-pointer"
+                            title="Trascina per riordinare"
+                            aria-label="Trascina per riordinare"
+                            onMouseDown={() => { dragArmed.current = true; }}
+                            onMouseUp={() => { dragArmed.current = false; }}
+                            onTouchStart={() => { dragArmed.current = true; }}
+                            onTouchEnd={() => { dragArmed.current = false; }}
+                            className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-blue-100 border border-gray-200 hover:border-blue-300 flex items-center justify-center transition-all cursor-grab active:cursor-grabbing"
                           >
-                            <i className={`fas ${action.icon} text-gray-600 hover:text-blue-700 text-sm`}></i>
+                            <i className="fas fa-grip-vertical text-gray-500 text-sm"></i>
                           </button>
-                        )
-                      )}
-                    </div>
-                  </td>
-                )}
-                {columns.map((c, colIdx) => {
-                  const value = getValueByPath(item, c.key);
-                  return (
-                    <td
-                      key={c.key}
-                      className={`px-4 py-3 ${colIdx < columns.length - 1 ? 'border-r border-gray-200' : ''}`}
-                      style={c.width ? { width: c.width } : undefined}
-                    >
-                      {c.render ? c.render(value, item) : c.type === 'image' ? (
-                        value ? <img src={value} alt="" className="w-10 h-10 rounded object-cover" /> : <span className="text-gray-400">-</span>
-                      ) : (
-                        <span>{value ?? '-'}</span>
-                      )}
+                        )}
+                        {actions?.map((action) =>
+                          action.visibility && !action.visibility(item) ? null : (
+                            <button
+                              type="button"
+                              key={action.icon}
+                              onClick={() => action.method(item)}
+                              title={action.tooltip}
+                              className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-blue-100 border border-gray-200 hover:border-blue-300 flex items-center justify-center transition-all cursor-pointer"
+                            >
+                              <i className={`fas ${action.icon} text-gray-600 hover:text-blue-700 text-sm`}></i>
+                            </button>
+                          )
+                        )}
+                      </div>
                     </td>
-                  );
-                })}
-              </tr>
-            ))}
+                  )}
+                  {columns.map((c, colIdx) => {
+                    const value = getValueByPath(item, c.key);
+                    return (
+                      <td
+                        key={c.key}
+                        className={`px-4 py-3 ${colIdx < columns.length - 1 ? 'border-r border-gray-200' : ''}`}
+                        style={c.width ? { width: c.width } : undefined}
+                      >
+                        {c.render ? c.render(value, item) : c.type === 'image' ? (
+                          value ? <img src={value} alt="" className="w-10 h-10 rounded object-cover" /> : <span className="text-gray-400">-</span>
+                        ) : (
+                          <span>{value ?? '-'}</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

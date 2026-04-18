@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { adminCreate, adminUpdate, adminGetItem, getUploadUrl, uploadToS3 } from '../../../services/api-utility';
+import { adminCreate, adminUpdate, adminGetItem, getUploadUrl, uploadToS3, adminPostAction } from '../../../services/api-utility';
 import Input from '../../../Components/Input';
 
 interface StreamingLink {
@@ -13,7 +13,12 @@ interface FormState {
   titolo: string;
   fotoS3Path: string;
   audioPreviewS3Path: string;
-  ordine: number;
+}
+
+interface EmailModal {
+  open: boolean;
+  titolo: string;
+  descrizione: string;
 }
 
 const MusicAlbumDetail = () => {
@@ -22,12 +27,15 @@ const MusicAlbumDetail = () => {
   const isNew = id === 'new';
 
   const [form, setForm] = useState<FormState>({
-    titolo: '', fotoS3Path: '', audioPreviewS3Path: '', ordine: 0,
+    titolo: '', fotoS3Path: '', audioPreviewS3Path: '',
   });
   const [streamingLinks, setStreamingLinks] = useState<StreamingLink[]>([]);
+  const [emailSentAt, setEmailSentAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [uploadingField, setUploadingField] = useState<'foto' | 'audio' | null>(null);
+  const [emailModal, setEmailModal] = useState<EmailModal>({ open: false, titolo: '', descrizione: '' });
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     if (isNew) return;
@@ -36,7 +44,6 @@ const MusicAlbumDetail = () => {
         titolo: data.titolo || '',
         fotoS3Path: data.fotoS3Path || '',
         audioPreviewS3Path: data.audioPreviewS3Path || '',
-        ordine: data.ordine ?? 0,
       });
       if (data.streamingLinks && typeof data.streamingLinks === 'object') {
         setStreamingLinks(
@@ -46,6 +53,7 @@ const MusicAlbumDetail = () => {
           }))
         );
       }
+      setEmailSentAt(data.emailSentAt || null);
     }).catch(() => toast.error('Errore nel caricamento'))
       .finally(() => setLoading(false));
   }, [id, isNew]);
@@ -114,28 +122,78 @@ const MusicAlbumDetail = () => {
     }
   };
 
+  const buildEmailDescrizione = () => {
+    const parts: string[] = [];
+    const validLinks = streamingLinks.filter((l) => l.platform.trim() && l.url.trim());
+    if (validLinks.length) {
+      parts.push('Ascolta ora su:\n' + validLinks.map((l) => `${l.platform}: ${l.url}`).join('\n'));
+    }
+    return parts.join('\n\n');
+  };
+
+  const openEmailModal = () => {
+    setEmailModal({ open: true, titolo: form.titolo, descrizione: buildEmailDescrizione() });
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailModal.titolo.trim()) { toast.error('Il titolo è obbligatorio'); return; }
+    setSendingEmail(true);
+    try {
+      const res = await adminPostAction(`music-albums/${id}/send-newsletter`, {
+        titolo: emailModal.titolo,
+        descrizione: emailModal.descrizione,
+      });
+      setEmailSentAt(res.emailSentAt);
+      setEmailModal({ open: false, titolo: '', descrizione: '' });
+      toast.success(`Email inviata a ${res.sentCount} iscritti`);
+    } catch {
+      toast.error('Errore durante l\'invio dell\'email');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const formatEmailSentAt = (v: string) =>
+    new Date(v).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
   }
 
   return (
     <div className="container mx-auto px-6 py-8 max-w-2xl">
-      <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate('/admin/discografia')} className="text-gray-500 hover:text-gray-900 cursor-pointer">
-          <i className="fa-solid fa-arrow-left"></i>
-        </button>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {isNew ? 'Nuovo album musicale' : 'Modifica album musicale'}
-        </h1>
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/admin/discografia')} className="text-gray-500 hover:text-gray-900 cursor-pointer">
+            <i className="fa-solid fa-arrow-left"></i>
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isNew ? 'Nuovo album musicale' : 'Modifica album musicale'}
+          </h1>
+        </div>
+        {!isNew && (
+          <div className="flex flex-col items-end gap-1">
+            <button
+              type="button"
+              onClick={openEmailModal}
+              className="px-4 py-2 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm cursor-pointer"
+            >
+              <i className="fa-solid fa-paper-plane"></i>
+              Invia email
+            </button>
+            {emailSentAt && (
+              <span className="text-xs text-green-600 flex items-center gap-1">
+                <i className="fa-solid fa-check-circle"></i>
+                Inviata il {formatEmailSentAt(emailSentAt)}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
-        <div className="grid grid-cols-2 gap-4">
-          <Input label="Titolo *" value={form.titolo}
-            onChange={(e) => setForm((p) => ({ ...p, titolo: e.target.value }))} required />
-          <Input label="Ordine" type="number" value={String(form.ordine)}
-            onChange={(e) => setForm((p) => ({ ...p, ordine: Number(e.target.value) || 0 }))} />
-        </div>
+        <Input label="Titolo *" value={form.titolo}
+          onChange={(e) => setForm((p) => ({ ...p, titolo: e.target.value }))} required />
 
         {/* Copertina */}
         <div>
@@ -173,17 +231,11 @@ const MusicAlbumDetail = () => {
           <div className="space-y-2">
             {streamingLinks.map((link, i) => (
               <div key={i} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={link.platform}
-                  placeholder="spotify / apple / youtube..."
+                <input type="text" value={link.platform} placeholder="spotify / apple / youtube..."
                   onChange={(e) => updateLink(i, 'platform', e.target.value)}
                   className="w-36 border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
-                <input
-                  type="url"
-                  value={link.url}
-                  placeholder="https://..."
+                <input type="url" value={link.url} placeholder="https://..."
                   onChange={(e) => updateLink(i, 'url', e.target.value)}
                   className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
@@ -209,6 +261,74 @@ const MusicAlbumDetail = () => {
           </button>
         </div>
       </form>
+
+      {/* Modal composizione email */}
+      {emailModal.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-900">Componi email newsletter</h2>
+              <button
+                onClick={() => setEmailModal({ open: false, titolo: '', descrizione: '' })}
+                className="text-gray-400 hover:text-gray-700 cursor-pointer"
+              >
+                <i className="fa-solid fa-times"></i>
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              {emailSentAt && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700 flex items-center gap-2">
+                  <i className="fa-solid fa-triangle-exclamation"></i>
+                  Email già inviata il {formatEmailSentAt(emailSentAt)}. Procedendo verrà inviata nuovamente.
+                </div>
+              )}
+              {/* Anteprima copertina */}
+              {form.fotoS3Path && (
+                <div className="flex justify-center">
+                  <img src={form.fotoS3Path} alt="Copertina" className="w-32 h-32 object-cover rounded-xl shadow" />
+                </div>
+              )}
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">Oggetto</label>
+                <input
+                  type="text"
+                  value={emailModal.titolo}
+                  onChange={(e) => setEmailModal((p) => ({ ...p, titolo: e.target.value }))}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">Corpo email</label>
+                <p className="text-xs text-gray-400 mb-2">Usa <code>---</code> su una riga per inserire un separatore orizzontale</p>
+                <textarea
+                  value={emailModal.descrizione}
+                  onChange={(e) => setEmailModal((p) => ({ ...p, descrizione: e.target.value }))}
+                  rows={10}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setEmailModal({ open: false, titolo: '', descrizione: '' })}
+                className="px-5 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors cursor-pointer"
+              >
+                Annulla
+              </button>
+              <button
+                type="button"
+                onClick={handleSendEmail}
+                disabled={sendingEmail}
+                className="px-5 py-2 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-700 disabled:opacity-50 transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                <i className="fa-solid fa-paper-plane"></i>
+                {sendingEmail ? 'Invio in corso...' : 'Invia a tutti gli iscritti'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

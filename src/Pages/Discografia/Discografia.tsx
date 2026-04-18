@@ -26,7 +26,7 @@ const Discografia = () => {
 
   return (
     <PublicLayout>
-      <div className="container mx-auto px-6 py-16 max-w-4xl">
+      <div className="container mx-auto px-3 md:px-6 py-16 max-w-4xl">
         <div className="mb-12">
           <h1 className="text-4xl font-bold mb-2">{t('discografia.title')}</h1>
           <p className="text-gray-500">{t('discografia.subtitle')}</p>

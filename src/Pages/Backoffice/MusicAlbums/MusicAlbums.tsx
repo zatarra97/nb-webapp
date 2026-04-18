@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Table from '../../../Components/Table';
-import { adminGetList, adminDelete } from '../../../services/api-utility';
+import { useConfirmDialog } from '../../../Components/ConfirmDialog';
+import { adminGetList, adminDelete, adminPatch } from '../../../services/api-utility';
 
 interface MusicAlbum {
   id: number;
@@ -10,10 +11,12 @@ interface MusicAlbum {
   titolo: string;
   fotoS3Path?: string;
   ordine: number;
+  emailSentAt?: string;
 }
 
 const MusicAlbums = () => {
   const navigate = useNavigate();
+  const confirm = useConfirmDialog();
   const [albums, setAlbums] = useState<MusicAlbum[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +34,19 @@ const MusicAlbums = () => {
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (album: MusicAlbum) => {
-    if (!window.confirm(`Eliminare l'album "${album.titolo}"?`)) return;
+    const ok = await confirm({
+      title: "Eliminare l'album musicale?",
+      description: (
+        <>
+          Stai per eliminare <strong>"{album.titolo}"</strong> dalla discografia,
+          inclusi link streaming, copertina e preview audio associati.
+          L'operazione non può essere annullata.
+        </>
+      ),
+      confirmLabel: 'Elimina',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await adminDelete('music-albums', album.publicId);
       toast.success('Album eliminato');
@@ -41,10 +56,33 @@ const MusicAlbums = () => {
     }
   };
 
+  const handleReorder = async (next: MusicAlbum[]) => {
+    const previous = albums;
+    setAlbums(next);
+    try {
+      await adminPatch('music-albums/reorder', {
+        items: next.map((a, idx) => ({ publicId: a.publicId, ordine: idx + 1 })),
+      });
+    } catch {
+      toast.error('Errore durante il riordino');
+      setAlbums(previous);
+    }
+  };
+
   const columns = [
     { key: 'fotoS3Path', header: 'Copertina', type: 'image' as const, width: '80px' },
     { key: 'titolo', header: 'Titolo' },
-    { key: 'ordine', header: 'Ordine' },
+    {
+      key: 'emailSentAt',
+      header: 'Email inviata',
+      render: (v: string) =>
+        v
+          ? <span className="text-xs text-green-600 flex items-center gap-1">
+              <i className="fa-solid fa-check-circle"></i>
+              {new Date(v).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </span>
+          : <span className="text-gray-400 text-xs">—</span>,
+    },
   ];
 
   const actions = [
@@ -67,7 +105,7 @@ const MusicAlbums = () => {
           Nuovo album
         </button>
       </div>
-      <Table columns={columns} data={albums} actions={actions} loading={loading} />
+      <Table columns={columns} data={albums} actions={actions} loading={loading} sortable onReorder={handleReorder} />
     </div>
   );
 };

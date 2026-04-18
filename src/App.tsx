@@ -11,6 +11,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { cognitoService, userPool } from './services/cognito';
 import { LOCAL_STORAGE_KEYS, resolveRole, USER_ROLES, DEFAULT_ADMIN_ROUTE } from './constants';
+import { initAnalytics, trackPageView } from './services/analytics';
 
 // Pagine pubbliche
 import Home from './Pages/Home/Home';
@@ -22,6 +23,13 @@ import EventiPage from './Pages/Eventi/Eventi';
 import GalleryPage from './Pages/Gallery/Gallery';
 import GalleryAlbumPage from './Pages/Gallery/GalleryAlbum';
 import DiscografiaPage from './Pages/Discografia/Discografia';
+import ContactsPage from './Pages/Contacts/Contacts';
+
+// Pagine legali
+import PrivacyPolicy from './Pages/Legal/PrivacyPolicy';
+import CookiePolicy from './Pages/Legal/CookiePolicy';
+import CookieBanner from './Components/CookieBanner';
+import { ConfirmDialogProvider } from './Components/ConfirmDialog';
 
 // Auth
 import Login from './Pages/Auth/Login';
@@ -37,6 +45,7 @@ import MusicAlbums from './Pages/Backoffice/MusicAlbums/MusicAlbums';
 import MusicAlbumDetail from './Pages/Backoffice/MusicAlbums/MusicAlbumDetail';
 import ContentBlocks from './Pages/Backoffice/ContentBlocks/ContentBlocks';
 import ContentBlockDetail from './Pages/Backoffice/ContentBlocks/ContentBlockDetail';
+import NewsletterAdmin from './Pages/Backoffice/Newsletter/Newsletter';
 import AdminLayout from './Components/AdminLayout';
 
 // ---------------------------------------------------------------------------
@@ -87,6 +96,12 @@ const AppContent: React.FC = () => {
     document.body.classList.toggle('admin-mode', location.pathname.startsWith('/admin'));
   }, [location.pathname]);
 
+  // Inizializza GA una sola volta; il loader controlla internamente il consenso
+  useEffect(() => { initAnalytics(); }, []);
+
+  // Pageview SPA (no-op se GA non è caricato o consenso mancante)
+  useEffect(() => { trackPageView(location.pathname); }, [location.pathname]);
+
   useEffect(() => {
     const cognitoUser = userPool.getCurrentUser();
     if (!cognitoUser) { setIsCheckingAuth(false); return; }
@@ -125,6 +140,7 @@ const AppContent: React.FC = () => {
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} />
+      <CookieBanner />
       <Routes>
         {/* Pubbliche */}
         <Route path="/" element={<Home />} />
@@ -136,6 +152,11 @@ const AppContent: React.FC = () => {
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/gallery/:albumId" element={<GalleryAlbumPage />} />
         <Route path="/discografia" element={<DiscografiaPage />} />
+        <Route path="/contacts" element={<ContactsPage />} />
+
+        {/* Legali */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
 
         {/* Login */}
         <Route
@@ -165,6 +186,8 @@ const AppContent: React.FC = () => {
         <Route path="/admin/contenuti" element={<ProtectedRoute {...protectedProps}><ContentBlocks /></ProtectedRoute>} />
         <Route path="/admin/contenuti/:id" element={<ProtectedRoute {...protectedProps}><ContentBlockDetail /></ProtectedRoute>} />
 
+        <Route path="/admin/newsletter" element={<ProtectedRoute {...protectedProps}><NewsletterAdmin /></ProtectedRoute>} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
@@ -173,7 +196,9 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => (
   <Router>
-    <AppContent />
+    <ConfirmDialogProvider>
+      <AppContent />
+    </ConfirmDialogProvider>
   </Router>
 );
 

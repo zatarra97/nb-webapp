@@ -7,11 +7,12 @@ interface AdminLayoutProps {
 }
 
 const navItems = [
-  { path: '/admin/contenuti', label: 'Contenuti', icon: 'fa-align-left' },
   { path: '/admin/eventi', label: 'Eventi', icon: 'fa-calendar' },
-  { path: '/admin/press', label: 'Press', icon: 'fa-newspaper' },
-  { path: '/admin/gallery', label: 'Gallery', icon: 'fa-images' },
   { path: '/admin/discografia', label: 'Discografia', icon: 'fa-music' },
+  { path: '/admin/gallery', label: 'Gallery', icon: 'fa-images' },
+  { path: '/admin/contenuti', label: 'Contenuti', icon: 'fa-align-left' },
+  { path: '/admin/press', label: 'Press', icon: 'fa-newspaper' },
+  { path: '/admin/newsletter', label: 'Newsletter', icon: 'fa-envelope' },
 ];
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, onLogout }) => {

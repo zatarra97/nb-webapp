@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
@@ -6,6 +6,7 @@ import {
   getUploadUrl, uploadToS3, deleteMedia,
 } from '../../../services/api-utility';
 import Input from '../../../Components/Input';
+import { useConfirmDialog } from '../../../Components/ConfirmDialog';
 
 interface Immagine {
   publicId: string;
@@ -29,23 +30,33 @@ interface EditingImage extends Immagine {
 const PhotoAlbumDetail = () => {
   const { albumId } = useParams<{ albumId: string }>();
   const navigate = useNavigate();
+  const confirm = useConfirmDialog();
   const isNew = albumId === 'new';
 
   const [nome, setNome] = useState('');
-  const [ordine, setOrdine] = useState(0);
   const [images, setImages] = useState<EditingImage[]>([]);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [editingImage, setEditingImage] = useState<EditingImage | null>(null);
 
+  // Drag & drop state per la griglia immagini
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+  const dragArmed = useRef(false);
+
+  // Carica album (mantenendo immagini ordinate per `ordine` ASC)
+  const loadAlbum = async () => {
+    if (isNew || !albumId) return;
+    const data = await adminGetItem('photo-albums', albumId);
+    setNome(data.nome || '');
+    const sorted = (data.immagini ?? []).slice().sort((a: Immagine, b: Immagine) => a.ordine - b.ordine);
+    setImages(sorted);
+  };
+
   useEffect(() => {
     if (isNew) return;
-    adminGetItem('photo-albums', albumId!).then((data) => {
-      setNome(data.nome || '');
-      setOrdine(data.ordine ?? 0);
-      setImages(data.immagini ?? []);
-    }).catch(() => toast.error('Errore nel caricamento'))
+    loadAlbum().catch(() => toast.error('Errore nel caricamento'))
       .finally(() => setLoading(false));
   }, [albumId, isNew]);
 
@@ -55,11 +66,13 @@ const PhotoAlbumDetail = () => {
     setSaving(true);
     try {
       if (isNew) {
-        const created = await adminCreate('photo-albums', { nome, ordine });
+        // L'ordine viene assegnato automaticamente dal backend (max+1)
+        const created = await adminCreate('photo-albums', { nome });
         toast.success('Album creato');
         navigate(`/admin/gallery/${created.publicId}`, { replace: true });
       } else {
-        await adminUpdate('photo-albums', albumId!, { nome, ordine });
+        // Non inviamo `ordine`: il backend lo lascia invariato
+        await adminUpdate('photo-albums', albumId!, { nome });
         toast.success('Album salvato');
       }
     } catch {
@@ -69,28 +82,15 @@ const PhotoAlbumDetail = () => {
     }
   };
 
-  const handleImageFileSelect = async (file: File, idx: number) => {
-    setUploadingIdx(idx);
-    try {
-      const folder = `photo-albums/${albumId}`;
-      const { uploadUrl, publicUrl } = await getUploadUrl(folder, file.name, file.type);
-      await uploadToS3(uploadUrl, file);
-      setImages((prev) =>
-        prev.map((img, i) => (i === idx ? { ...img, s3Path: publicUrl } : img))
-      );
-      toast.success('Immagine caricata');
-    } catch {
-      toast.error('Errore durante il caricamento');
-    } finally {
-      setUploadingIdx(null);
-    }
-  };
-
   const handleAddImage = async () => {
     if (isNew) { toast.error('Salva prima l\'album'); return; }
+    // Ordine assegnato di nascosto all'utente: ultimo + 1 (o 1 se lista vuota)
+    const nextOrdine = images.length
+      ? Math.max(...images.map((i) => i.ordine)) + 1
+      : 1;
     const newImg: EditingImage = {
       publicId: '',
-      ordine: (images.length + 1),
+      ordine: nextOrdine,
       _isNew: true,
     };
     setEditingImage(newImg);
@@ -113,13 +113,13 @@ const PhotoAlbumDetail = () => {
           descrizioneIT: editingImage.descrizioneIT || null,
           descrizioneEN: editingImage.descrizioneEN || null,
         });
-        setImages((prev) => [...prev, created]);
+        setImages((prev) => [...prev, created].sort((a, b) => a.ordine - b.ordine));
       } else {
         await adminUpdate(
           `photo-albums/${albumId}/images`,
           editingImage.publicId,
           {
-            ordine: editingImage.ordine,
+            // Non inviamo `ordine`: il riordino avviene solo via drag & drop
             s3Path: editingImage.s3Path || null,
             titolo: editingImage.titolo || null,
             ruoloIT: editingImage.ruoloIT || null,
@@ -131,7 +131,7 @@ const PhotoAlbumDetail = () => {
           }
         );
         setImages((prev) =>
-          prev.map((img) => (img.publicId === editingImage.publicId ? editingImage : img))
+          prev.map((img) => (img.publicId === editingImage.publicId ? { ...img, ...editingImage } : img))
         );
       }
       toast.success('Immagine salvata');
@@ -144,7 +144,19 @@ const PhotoAlbumDetail = () => {
   };
 
   const handleDeleteImage = async (img: EditingImage) => {
-    if (!window.confirm('Eliminare questa immagine?')) return;
+    const label = img.titolo?.trim() || img.ruoloIT?.trim() || `immagine #${img.ordine}`;
+    const ok = await confirm({
+      title: "Eliminare l'immagine?",
+      description: (
+        <>
+          Stai per eliminare <strong>"{label}"</strong> da questo album.
+          Il file su S3 verrà rimosso e l'operazione non può essere annullata.
+        </>
+      ),
+      confirmLabel: 'Elimina',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await adminDelete(`photo-albums/${albumId}/images`, img.publicId);
       if (img.s3Path) await deleteMedia(img.s3Path).catch(() => {});
@@ -153,6 +165,58 @@ const PhotoAlbumDetail = () => {
     } catch {
       toast.error('Errore durante l\'eliminazione');
     }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Drag & drop — riordino immagini
+  // ---------------------------------------------------------------------------
+  const persistReorder = async (next: EditingImage[]) => {
+    const previous = images;
+    setImages(next);
+    try {
+      await adminPatch(`photo-albums/${albumId}/images/reorder`, {
+        items: next.map((img, idx) => ({ publicId: img.publicId, ordine: idx + 1 })),
+      });
+      // Aggiorno il campo `ordine` locale così l'etichetta #N resta coerente
+      setImages((curr) => curr.map((img, idx) => ({ ...img, ordine: idx + 1 })));
+    } catch {
+      toast.error('Errore durante il riordino');
+      setImages(previous);
+    }
+  };
+
+  const handleCardDragStart = (idx: number) => (e: React.DragEvent) => {
+    if (!dragArmed.current) { e.preventDefault(); return; }
+    setDraggedIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  };
+
+  const handleCardDragOver = (idx: number) => (e: React.DragEvent) => {
+    if (draggedIdx === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (overIdx !== idx) setOverIdx(idx);
+  };
+
+  const handleCardDrop = (idx: number) => (e: React.DragEvent) => {
+    if (draggedIdx === null) return;
+    e.preventDefault();
+    if (draggedIdx !== idx) {
+      const next = [...images];
+      const [moved] = next.splice(draggedIdx, 1);
+      next.splice(idx, 0, moved);
+      persistReorder(next);
+    }
+    setDraggedIdx(null);
+    setOverIdx(null);
+    dragArmed.current = false;
+  };
+
+  const handleCardDragEnd = () => {
+    setDraggedIdx(null);
+    setOverIdx(null);
+    dragArmed.current = false;
   };
 
   if (loading) {
@@ -175,9 +239,6 @@ const PhotoAlbumDetail = () => {
         <div className="flex-1">
           <Input label="Nome album *" value={nome} onChange={(e) => setNome(e.target.value)} required />
         </div>
-        <div className="w-32">
-          <Input label="Ordine" type="number" value={String(ordine)} onChange={(e) => setOrdine(Number(e.target.value) || 0)} />
-        </div>
         <button type="submit" disabled={saving} className="px-6 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer h-10">
           {saving ? '...' : 'Salva album'}
         </button>
@@ -196,32 +257,69 @@ const PhotoAlbumDetail = () => {
             </button>
           </div>
 
+          {images.length > 0 && (
+            <p className="text-xs text-gray-500 mb-3">
+              <i className="fa-solid fa-circle-info mr-1" />
+              Trascina le immagini usando l'icona <i className="fas fa-grip-vertical mx-1" /> per riordinarle.
+            </p>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {images.sort((a, b) => a.ordine - b.ordine).map((img) => (
-              <div key={img.publicId} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                {img.s3Path ? (
-                  <img src={img.s3Path} alt={img.titolo || ''} className="w-full h-36 object-cover" />
-                ) : (
-                  <div className="w-full h-36 bg-gray-100 flex items-center justify-center">
-                    <i className="fa-solid fa-image text-3xl text-gray-400"></i>
-                  </div>
-                )}
-                <div className="p-2 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-gray-700 truncate">{img.titolo || `#${img.ordine}`}</p>
-                    {img.ruoloIT && <p className="text-xs text-gray-500 truncate">{img.ruoloIT}</p>}
-                  </div>
-                  <div className="flex gap-1">
-                    <button type="button" onClick={() => setEditingImage(img)} className="w-7 h-7 rounded bg-blue-50 hover:bg-blue-100 flex items-center justify-center cursor-pointer">
-                      <i className="fas fa-edit text-blue-700 text-xs"></i>
-                    </button>
-                    <button type="button" onClick={() => handleDeleteImage(img)} className="w-7 h-7 rounded bg-red-50 hover:bg-red-100 flex items-center justify-center cursor-pointer">
-                      <i className="fas fa-trash text-red-600 text-xs"></i>
-                    </button>
+            {images.map((img, idx) => {
+              const isDragging = draggedIdx === idx;
+              const isOver = overIdx === idx && draggedIdx !== idx;
+              return (
+                <div
+                  key={img.publicId}
+                  draggable
+                  onDragStart={handleCardDragStart(idx)}
+                  onDragOver={handleCardDragOver(idx)}
+                  onDrop={handleCardDrop(idx)}
+                  onDragEnd={handleCardDragEnd}
+                  onDragLeave={() => { if (overIdx === idx) setOverIdx(null); }}
+                  className={`bg-white border border-gray-200 rounded-xl overflow-hidden transition-all ${
+                    isDragging ? 'opacity-40' : ''
+                  } ${isOver ? 'outline outline-2 outline-blue-400 outline-offset-[-2px]' : ''}`}
+                >
+                  {img.s3Path ? (
+                    <img src={img.s3Path} alt={img.titolo || ''} className="w-full h-36 object-cover" />
+                  ) : (
+                    <div className="w-full h-36 bg-gray-100 flex items-center justify-center">
+                      <i className="fa-solid fa-image text-3xl text-gray-400"></i>
+                    </div>
+                  )}
+                  <div className="p-2 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-bold text-gray-500 flex-shrink-0">#{idx + 1}</span>
+                      <button
+                        type="button"
+                        title="Trascina per riordinare"
+                        aria-label="Trascina per riordinare"
+                        onMouseDown={() => { dragArmed.current = true; }}
+                        onMouseUp={() => { dragArmed.current = false; }}
+                        onTouchStart={() => { dragArmed.current = true; }}
+                        onTouchEnd={() => { dragArmed.current = false; }}
+                        className="w-6 h-6 rounded bg-gray-100 hover:bg-blue-100 border border-gray-200 flex items-center justify-center flex-shrink-0 cursor-grab active:cursor-grabbing"
+                      >
+                        <i className="fas fa-grip-vertical text-gray-500 text-xs" />
+                      </button>
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-gray-700 truncate">{img.titolo || '(senza titolo)'}</p>
+                        {img.ruoloIT && <p className="text-xs text-gray-500 truncate">{img.ruoloIT}</p>}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button type="button" onClick={() => setEditingImage(img)} className="w-7 h-7 rounded bg-blue-50 hover:bg-blue-100 flex items-center justify-center cursor-pointer">
+                        <i className="fas fa-edit text-blue-700 text-xs"></i>
+                      </button>
+                      <button type="button" onClick={() => handleDeleteImage(img)} className="w-7 h-7 rounded bg-red-50 hover:bg-red-100 flex items-center justify-center cursor-pointer">
+                        <i className="fas fa-trash text-red-600 text-xs"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -266,8 +364,6 @@ const PhotoAlbumDetail = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Input label="Ordine *" type="number" value={String(editingImage.ordine)}
-                  onChange={(e) => setEditingImage((p) => p ? { ...p, ordine: Number(e.target.value) || 0 } : null)} />
                 <Input label="Titolo" value={editingImage.titolo || ''}
                   onChange={(e) => setEditingImage((p) => p ? { ...p, titolo: e.target.value } : null)} />
                 <Input label="Ruolo (IT)" value={editingImage.ruoloIT || ''}

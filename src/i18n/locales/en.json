@@ -5,7 +5,8 @@
     "eventi": "Events",
     "press": "Press",
     "gallery": "Gallery",
-    "discografia": "Discography"
+    "discografia": "Discography",
+    "contacts": "Contacts"
   },
   "about": {
     "title": "About",
@@ -28,6 +29,8 @@
   "home": {
     "hero_subtitle": "Singer",
     "section_eventi": "Upcoming events",
+    "section_events": "Dates",
+    "section_music": "Discography",
     "section_press": "Press coverage",
     "section_gallery": "Gallery",
     "section_discografia": "Discography",
@@ -49,7 +52,12 @@
     "subtitle": "Photos and images",
     "back": "Back to albums",
     "empty": "No albums available at the moment.",
-    "empty_images": "No images in this album."
+    "empty_images": "No images in this album.",
+    "download_title": "Press photos",
+    "download_subtitle": "Official images available for download by journalists and media.",
+    "download_button": "Download",
+    "downloading": "Downloading...",
+    "download_error": "Error while downloading the image."
   },
   "discografia": {
     "title": "Discography",
@@ -145,9 +153,35 @@
       "url": "URL"
     }
   },
+  "contacts": {
+    "title": "Contacts",
+    "general_management": "General Management worldwide",
+    "local_management": "Local Management for France, Italy & UK"
+  },
   "common": {
     "it": "IT",
     "en": "EN",
     "required": "Required field"
+  },
+  "footer": {
+    "all_rights_reserved": "All rights reserved",
+    "privacy_policy": "Privacy Policy",
+    "cookie_policy": "Cookie Policy",
+    "manage_cookies": "Manage cookies"
+  },
+  "cookies": {
+    "banner_title": "We respect your privacy",
+    "banner_body": "We use technical cookies necessary for the website to function and, with your consent, third-party analytics cookies (Google Analytics) to understand how the site is used in anonymous and aggregated form. You can accept, reject or customise your choice. More details in the",
+    "banner_cookie_policy": "Cookie Policy",
+    "banner_privacy_policy": "Privacy Policy",
+    "accept_all": "Accept all",
+    "reject_all": "Reject all",
+    "customize": "Customise",
+    "save_preferences": "Save preferences",
+    "cat_always_active": "always active",
+    "cat_technical_title": "Technical and functional cookies",
+    "cat_technical_body": "Necessary for the website to function (language preferences, consent management, admin session). They do not require consent pursuant to art. 122 of the Italian Privacy Code.",
+    "cat_analytics_title": "Third-party analytics cookies",
+    "cat_analytics_body": "Google Analytics 4 with anonymised IP. They help us understand how the website is used. Activated only with your explicit consent."
   }
 }

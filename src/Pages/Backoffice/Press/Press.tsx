@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Table from '../../../Components/Table';
-import { adminGetList, adminDelete } from '../../../services/api-utility';
+import { useConfirmDialog } from '../../../Components/ConfirmDialog';
+import { adminGetList, adminDelete, adminPatch } from '../../../services/api-utility';
 
 interface PressItem {
   id: number;
@@ -15,6 +16,7 @@ interface PressItem {
 
 const PressList = () => {
   const navigate = useNavigate();
+  const confirm = useConfirmDialog();
   const [items, setItems] = useState<PressItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,7 +34,19 @@ const PressList = () => {
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (item: PressItem) => {
-    if (!window.confirm(`Eliminare "${item.nomeTestata}"?`)) return;
+    const ok = await confirm({
+      title: "Eliminare l'articolo press?",
+      description: (
+        <>
+          Stai per eliminare l'articolo della testata <strong>"{item.nomeTestata}"</strong>
+          {item.nomeGiornalista && <> di <strong>{item.nomeGiornalista}</strong></>}.
+          L'operazione non può essere annullata.
+        </>
+      ),
+      confirmLabel: 'Elimina',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await adminDelete('press', item.publicId);
       toast.success('Articolo eliminato');
@@ -42,10 +56,22 @@ const PressList = () => {
     }
   };
 
+  const handleReorder = async (next: PressItem[]) => {
+    const previous = items;
+    setItems(next); // aggiornamento ottimistico
+    try {
+      await adminPatch('press/reorder', {
+        items: next.map((it, idx) => ({ publicId: it.publicId, ordine: idx + 1 })),
+      });
+    } catch {
+      toast.error('Errore durante il riordino');
+      setItems(previous);
+    }
+  };
+
   const columns = [
     { key: 'nomeTestata', header: 'Testata' },
     { key: 'nomeGiornalista', header: 'Giornalista', render: (v: string) => v || <span className="text-gray-400">-</span> },
-    { key: 'ordine', header: 'Ordine' },
     {
       key: 'citazioneIT',
       header: 'Citazione',
@@ -75,7 +101,7 @@ const PressList = () => {
           Nuovo articolo
         </button>
       </div>
-      <Table columns={columns} data={items} actions={actions} loading={loading} />
+      <Table columns={columns} data={items} actions={actions} loading={loading} sortable onReorder={handleReorder} />
     </div>
   );
 };

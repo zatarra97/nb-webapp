@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Table from '../../../Components/Table';
+import { useConfirmDialog } from '../../../Components/ConfirmDialog';
 import { adminGetList, adminDelete } from '../../../services/api-utility';
 
 interface Evento {
@@ -10,11 +11,13 @@ interface Evento {
   titolo: string;
   linkBiglietti?: string;
   dates?: Array<{ data: string; ora?: string }>;
+  emailSentAt?: string;
   updatedAt?: string;
 }
 
 const Events = () => {
   const navigate = useNavigate();
+  const confirm = useConfirmDialog();
   const [eventi, setEventi] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +36,20 @@ const Events = () => {
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (event: Evento) => {
-    if (!window.confirm(`Eliminare l'evento "${event.titolo}"?`)) return;
+    const n = event.dates?.length ?? 0;
+    const ok = await confirm({
+      title: "Eliminare l'evento?",
+      description: (
+        <>
+          Stai per eliminare <strong>"{event.titolo}"</strong>
+          {n > 0 && <> e le sue <strong>{n}</strong> {n === 1 ? 'data' : 'date'}</>}.
+          L'operazione non può essere annullata.
+        </>
+      ),
+      confirmLabel: 'Elimina',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await adminDelete('events', event.publicId);
       toast.success('Evento eliminato');
@@ -65,7 +81,19 @@ const Events = () => {
         v ? <a href={v} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-xs">Link</a>
           : <span className="text-gray-400">-</span>,
     },
+    {
+      key: 'emailSentAt',
+      header: 'Email inviata',
+      render: (v: string) =>
+        v
+          ? <span className="text-xs text-green-600 flex items-center gap-1">
+              <i className="fa-solid fa-check-circle"></i>
+              {new Date(v).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </span>
+          : <span className="text-gray-400 text-xs">—</span>,
+    },
   ];
+
 
   const actions = [
     { icon: 'fa-edit', tooltip: 'Modifica', method: (e: Evento) => navigate(`/admin/eventi/${e.publicId}`) },

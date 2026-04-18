@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { adminGetList, adminDelete } from '../../../services/api-utility';
+import { useConfirmDialog } from '../../../Components/ConfirmDialog';
 
 const SEZIONI = ['about-me'];
 
 const ContentBlocks = () => {
   const navigate = useNavigate();
+  const confirm = useConfirmDialog();
   const [blocks, setBlocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterSezione, setFilterSezione] = useState('');
@@ -19,11 +21,24 @@ const ContentBlocks = () => {
       .finally(() => setLoading(false));
   }, [filterSezione]);
 
-  const handleDelete = async (publicId: string) => {
-    if (!window.confirm('Eliminare questo blocco?')) return;
+  const handleDelete = async (block: any) => {
+    const label = block.titoloIT?.trim() || block.titoloEN?.trim() || 'senza titolo';
+    const ok = await confirm({
+      title: 'Eliminare il blocco di contenuto?',
+      description: (
+        <>
+          Stai per eliminare il blocco <strong>"{label}"</strong> della sezione{' '}
+          <strong className="capitalize">{block.sezione}</strong>.
+          L'operazione non può essere annullata.
+        </>
+      ),
+      confirmLabel: 'Elimina',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
-      await adminDelete('content-blocks', publicId);
-      setBlocks((prev) => prev.filter((b) => b.publicId !== publicId));
+      await adminDelete('content-blocks', block.publicId);
+      setBlocks((prev) => prev.filter((b) => b.publicId !== block.publicId));
       toast.success('Blocco eliminato');
     } catch {
       toast.error('Errore durante l\'eliminazione');
@@ -93,7 +108,7 @@ const ContentBlocks = () => {
                 <i className="fas fa-edit text-blue-700 text-xs"></i>
               </button>
               <button
-                onClick={() => handleDelete(block.publicId)}
+                onClick={() => handleDelete(block)}
                 className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center cursor-pointer"
               >
                 <i className="fas fa-trash text-red-600 text-xs"></i>

@@ -106,6 +106,11 @@ export const adminPatch = async (path: string, data: any): Promise<void> => {
   await apiClient.patch(`${BACKEND_URL}/admin/${path}`, data);
 };
 
+export const adminPostAction = async (path: string, data: any): Promise<any> => {
+  const res = await apiClient.post(`${BACKEND_URL}/admin/${path}`, data);
+  return res.data;
+};
+
 // ---------------------------------------------------------------------------
 // S3 upload
 // ---------------------------------------------------------------------------
@@ -124,4 +129,24 @@ export const uploadToS3 = async (uploadUrl: string, file: File): Promise<void> =
 
 export const deleteMedia = async (url: string): Promise<void> => {
   await apiClient.delete(`${BACKEND_URL}/admin/media`, { data: { url } });
+};
+
+// ---------------------------------------------------------------------------
+// Download file — fetch del blob e trigger download con nome personalizzato.
+// Richiede CORS permissivo sul bucket (già configurato in Pulumi: allowedMethods
+// include GET e allowedHeaders `*`). Usa questo invece di <a href download>
+// perché il download attribute cross-origin è ignorato senza Content-Disposition.
+// ---------------------------------------------------------------------------
+export const downloadFileAs = async (url: string, filename: string): Promise<void> => {
+  const res = await fetch(url, { mode: "cors" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(objectUrl);
 };
